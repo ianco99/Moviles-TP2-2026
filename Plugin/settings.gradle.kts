@@ -24,5 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "kuznickiPlugin"
 include(":app")
-include(":kuznickilogger")
 include(":KuznickiLogger")
