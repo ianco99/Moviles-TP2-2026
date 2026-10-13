@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c28cbc14790d1d0439b3f211522eaaab, type: 3}
   m_Name: SingleShot
   m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.SingleShot
-  recoil: 14
+  recoil: 11

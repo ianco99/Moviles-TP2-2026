@@ -2,7 +2,8 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Cámara lateral: mira hacia +Z desde z = -distance y sigue al arma en X e Y.
+    // Sigue al arma desde atrás y al costado, mirando hacia adelante. Ángulo y distancia salen de CameraTuning
+    // y se leen en cada frame, así que se pueden ajustar con el juego en Play.
     [RequireComponent(typeof(Camera))]
     public sealed class FollowCamera : MonoBehaviour
     {
@@ -10,43 +11,42 @@ namespace GunJump.Gameplay
         [SerializeField] Transform target;
 
         Camera cam;
-        Vector3 velocity;
-        float framedAspect;
+        Vector3 focus;
+        Vector3 focusVelocity;
 
         void Awake()
         {
             cam = GetComponent<Camera>();
-            ApplyFraming();
 
             if (target != null)
-                transform.position = GoalPosition();
+                focus = GoalFocus();
+
+            Apply();
         }
 
         void LateUpdate()
         {
-            if (!Mathf.Approximately(cam.aspect, framedAspect))
-                ApplyFraming();
+            if (target != null)
+                focus = Vector3.SmoothDamp(focus, GoalFocus(), ref focusVelocity, tuning.SmoothTime);
 
-            if (target == null)
-                return;
-
-            transform.position = Vector3.SmoothDamp(transform.position, GoalPosition(), ref velocity, tuning.SmoothTime);
+            Apply();
         }
 
-        Vector3 GoalPosition()
+        Vector3 GoalFocus()
         {
             Vector3 position = target.position;
-            return new Vector3(position.x + tuning.LookAhead, position.y + tuning.VerticalOffset, -tuning.Distance);
+            return new Vector3(position.x + tuning.LookAhead, position.y + tuning.VerticalOffset, position.z);
         }
 
-        void ApplyFraming()
+        void Apply()
         {
-            framedAspect = cam.aspect;
+            Quaternion rotation = CameraFraming.Rotation(tuning.Yaw, tuning.Pitch);
+            transform.SetPositionAndRotation(CameraFraming.Position(focus, rotation, tuning.Distance), rotation);
 
             if (cam.orthographic)
-                cam.orthographicSize = CameraFraming.OrthographicSize(tuning.VisibleWidth, framedAspect);
+                cam.orthographicSize = CameraFraming.OrthographicSize(tuning.VisibleWidth, cam.aspect);
             else
-                cam.fieldOfView = CameraFraming.VerticalFieldOfView(tuning.VisibleWidth, tuning.Distance, framedAspect);
+                cam.fieldOfView = CameraFraming.VerticalFieldOfView(tuning.VisibleWidth, tuning.Distance, cam.aspect);
         }
     }
 }

@@ -12,9 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ebe64acda0e04d444bfb0dd64977a34a, type: 3}
   m_Name: GunTuning
   m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.GunTuning
-  spinSpeed: 360
-  spinKick: 180
-  spinRecovery: 720
-  recoilCarryOver: 0.866
-  maxSpeed: 80
+  recoilSpin: 420
+  spinDamping: 120
+  recoilCarryOver: 0.269
+  maxSpeed: 10
+  groundLift: 5
+  groundedGrace: 0.08
   fireInterval: 0.12

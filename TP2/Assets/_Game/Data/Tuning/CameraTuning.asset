@@ -12,8 +12,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 489397fe1b9c7c24e8ccd4f5be4f5776, type: 3}
   m_Name: CameraTuning
   m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.CameraTuning
-  visibleWidth: 20
-  distance: 40
-  lookAhead: 5
-  verticalOffset: 2
+  yaw: 58.5
+  pitch: 6
+  distance: 27
+  lookAhead: 1.43
+  verticalOffset: 1.14
+  visibleWidth: 14
   smoothTime: 0.15
