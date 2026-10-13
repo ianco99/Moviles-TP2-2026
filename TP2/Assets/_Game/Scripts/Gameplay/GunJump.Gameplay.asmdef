@@ -1,0 +1,10 @@
+{
+    "name": "GunJump.Gameplay",
+    "rootNamespace": "GunJump.Gameplay",
+    "references": [
+        "GunJump.Core",
+        "Unity.InputSystem",
+        "UnityEngine.UI"
+    ],
+    "autoReferenced": true
+}

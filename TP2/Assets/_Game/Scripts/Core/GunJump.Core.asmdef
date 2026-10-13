@@ -1,0 +1,6 @@
+{
+    "name": "GunJump.Core",
+    "rootNamespace": "GunJump.Core",
+    "references": [],
+    "autoReferenced": true
+}

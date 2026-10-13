@@ -70,6 +70,17 @@ crashlytics-build.properties
 # Packed Addressables
 /[Aa]ssets/[Aa]ddressable[Aa]ssets[Dd]ata/*/*.bin*
 
+# Signing keys
+*.keystore
+*.jks
+
+# AI tooling
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+Docs/plan-tecnico.md
+
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*

@@ -1,0 +1,12 @@
+{
+    "name": "GunJump.Editor",
+    "rootNamespace": "GunJump.EditorTools",
+    "references": [
+        "GunJump.Core",
+        "GunJump.Gameplay"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "autoReferenced": false
+}
