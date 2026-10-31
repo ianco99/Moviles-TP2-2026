@@ -3,7 +3,11 @@
     "rootNamespace": "GunJump.EditorTools",
     "references": [
         "GunJump.Core",
-        "GunJump.Gameplay"
+        "GunJump.Gameplay",
+        "GunJump.UI",
+        "Unity.InputSystem",
+        "Unity.TextMeshPro",
+        "UnityEngine.UI"
     ],
     "includePlatforms": [
         "Editor"

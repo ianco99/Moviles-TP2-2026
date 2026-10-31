@@ -30,9 +30,9 @@ namespace GunJump.Gameplay
 
             if (Physics.Raycast(transform.position, direction, out RaycastHit hit, step, config.HitMask, QueryTriggerInteraction.Ignore))
             {
-                Enemy enemy = hit.collider.GetComponentInParent<Enemy>();
-                if (enemy != null)
-                    enemy.TakeHit(new HitInfo(config.Damage, hit.point, direction));
+                IBulletTarget target = hit.collider.GetComponentInParent<IBulletTarget>();
+                if (target != null)
+                    target.TakeHit(new HitInfo(config.Damage, hit.point, direction));
 
                 release(this);
                 return;

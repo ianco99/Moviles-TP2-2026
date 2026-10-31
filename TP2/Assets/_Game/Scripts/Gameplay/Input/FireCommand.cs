@@ -5,15 +5,18 @@ namespace GunJump.Gameplay
     public sealed class FireCommand : ICommand
     {
         readonly Gun gun;
+        readonly LevelSession session;
 
-        public FireCommand(Gun gun)
+        public FireCommand(Gun gun, LevelSession session)
         {
             this.gun = gun;
+            this.session = session;
         }
 
         public void Execute()
         {
-            gun.TryFire();
+            if (session.CanFire && gun.TryFire())
+                session.ConsumeAmmo();
         }
     }
 }

@@ -2,10 +2,11 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    public abstract class Enemy : MonoBehaviour
+    public abstract class Enemy : MonoBehaviour, IBulletTarget
     {
         [SerializeField] EnemyConfig config;
 
+        LevelSession session;
         int health;
 
         public bool IsDead { get; private set; }
@@ -14,6 +15,11 @@ namespace GunJump.Gameplay
         protected virtual void Awake()
         {
             health = config.MaxHealth;
+        }
+
+        public void Bind(LevelSession levelSession)
+        {
+            session = levelSession;
         }
 
         // Template Method: la secuencia de recibir un impacto es fija;
@@ -30,6 +36,7 @@ namespace GunJump.Gameplay
                 return;
 
             IsDead = true;
+            session?.RegisterKill(config.CoinReward);
             OnDeath(hit);
         }
 
