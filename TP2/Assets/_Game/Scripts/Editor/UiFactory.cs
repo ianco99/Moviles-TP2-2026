@@ -1,6 +1,9 @@
 using GunJump.UI;
 using TMPro;
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 
 namespace GunJump.EditorTools
@@ -16,6 +19,16 @@ namespace GunJump.EditorTools
 
         static readonly Color ButtonColor = new Color(0.16f, 0.45f, 0.85f);
         static readonly Color DimColor = new Color(0f, 0f, 0f, 0.7f);
+
+        public static EventSystem CreateEventSystem()
+        {
+            var eventSystemObject = new GameObject("EventSystem", typeof(EventSystem));
+            var uiModule = eventSystemObject.AddComponent<InputSystemUIInputModule>();
+
+            // Lo mismo que hace el Inspector: deja asignado el asset de acciones del paquete, que sí se guarda en la escena.
+            Unsupported.SmartReset(uiModule);
+            return eventSystemObject.GetComponent<EventSystem>();
+        }
 
         public static GameObject CreateCanvas(string name, Transform parent)
         {

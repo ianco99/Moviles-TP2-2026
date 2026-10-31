@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class TestLogger : MonoBehaviour
 {
-#if UNITY_ANDROID
+#if UNITY_ANDROID && !UNITY_EDITOR
 	AndroidJavaObject loggerManagerInstance;
 
 	void Start()

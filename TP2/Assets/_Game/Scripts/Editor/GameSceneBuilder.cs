@@ -8,8 +8,6 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -415,11 +413,7 @@ namespace GunJump.EditorTools
             SetReference(bootstrap, "economyConfig", Load<EconomyConfig>(EconomyConfigPath));
             SetReference(bootstrap, "levels", Load<LevelCatalog>(LevelCatalogPath));
 
-            var eventSystem = new GameObject("EventSystem", typeof(EventSystem));
-            var uiModule = eventSystem.AddComponent<InputSystemUIInputModule>();
-            uiModule.AssignDefaultActions();
-            if (uiModule.actionsAsset == null || !AssetDatabase.Contains(uiModule.actionsAsset))
-                Debug.LogWarning("GunJump: el EventSystem de Boot quedó sin un asset de acciones de UI. Asignalo a mano en su InputSystemUIInputModule o los botones no van a responder.");
+            UiFactory.CreateEventSystem();
 
             new GameObject("Audio", typeof(AudioListener));
 
@@ -621,7 +615,7 @@ namespace GunJump.EditorTools
         }
 
         // Boot, Loading y Level1 quedan primeras y en ese orden. La escena del prototipo sale de la lista:
-        // sus scripts ya no existen.
+        // sigue sirviendo para probar en el Editor, pero no va en el build.
         static void UpdateBuildSettings()
         {
             string[] ordered = { BootScenePath, LoadingScenePath, Level1ScenePath };
@@ -705,7 +699,7 @@ namespace GunJump.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
         }
 
-        static void SetReference(Object target, string field, Object value)
+        internal static void SetReference(Object target, string field, Object value)
         {
             if (value == null)
                 throw new InvalidOperationException($"No hay nada que asignar a '{field}' de {target.GetType().Name}.");
