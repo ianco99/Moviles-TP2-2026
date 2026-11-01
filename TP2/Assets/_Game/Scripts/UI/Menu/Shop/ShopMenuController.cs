@@ -1,17 +1,10 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace _Game.Scripts.Shop
 {
-    public enum ShopCategory
-    {
-        Guns,
-        GunSkins,
-        Bullets,
-        ShotVFX
-    }
-
     public class ShopMenuController : MonoBehaviour
     {
         private static readonly Vector2 ItemSize = new Vector2(200f, 200f);
@@ -20,8 +13,12 @@ namespace _Game.Scripts.Shop
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private GridLayoutGroup grid;
         [SerializeField] private int initialPoolSize = 20;
-        //TODO: Replace with item ScriptableObjects
-        [SerializeField] private List<Sprite> placeholderSprites;
+
+        [Header("Items")]
+        [SerializeField] private List<ShopItem> guns;
+        [SerializeField] private List<ShopItem> gunSkins;
+        [SerializeField] private List<ShopItem> bullets;
+        [SerializeField] private List<ShopItem> shotVfx;
 
         private readonly List<Image> pool = new List<Image>();
         private ShopCategory currentCategory = ShopCategory.Guns;
@@ -48,7 +45,7 @@ namespace _Game.Scripts.Shop
 
         public void ShowCategory()
         {
-            ShowItems(GetSprites(currentCategory));
+            ShowItems(GetItems(currentCategory));
         }
 
         public void SelectCategory(int category)
@@ -57,32 +54,43 @@ namespace _Game.Scripts.Shop
             ShowCategory();
         }
 
-        //TODO: Filter by category once item ScriptableObjects exist
-        private IReadOnlyList<Sprite> GetSprites(ShopCategory category)
+        private IReadOnlyList<ShopItem> GetItems(ShopCategory category)
         {
-            return placeholderSprites;
+            switch (category)
+            {
+                case ShopCategory.Guns:
+                    return guns;
+                case ShopCategory.GunSkins:
+                    return gunSkins;
+                case ShopCategory.Bullets:
+                    return bullets;
+                case ShopCategory.ShotVFX:
+                    return shotVfx;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(category), category, null);
+            }
         }
 
-        private void ShowItems(IReadOnlyList<Sprite> sprites)
+        private void ShowItems(IReadOnlyList<ShopItem> items)
         {
-            while (pool.Count < sprites.Count)
+            while (pool.Count < items.Count)
             {
                 AddToPool();
             }
 
             for (int i = 0; i < pool.Count; i++)
             {
-                bool isUsed = i < sprites.Count;
+                bool isUsed = i < items.Count;
 
                 if (isUsed)
                 {
-                    pool[i].sprite = sprites[i];
+                    pool[i].sprite = items[i].Sprite;
                 }
 
                 pool[i].gameObject.SetActive(isUsed);
             }
 
-            ResizeContent(sprites.Count);
+            ResizeContent(items.Count);
         }
 
         private void AddToPool()
