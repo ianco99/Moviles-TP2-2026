@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using _Game.Scripts.Economy;
+using ianco99.ToolBox.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -9,7 +11,7 @@ namespace _Game.Scripts.Shop
     {
         private static readonly Vector2 ItemSize = new Vector2(200f, 200f);
 
-        [SerializeField] private Image itemPrefab;
+        [SerializeField] private ShopItemView itemPrefab;
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private GridLayoutGroup grid;
         [SerializeField] private int initialPoolSize = 20;
@@ -20,8 +22,13 @@ namespace _Game.Scripts.Shop
         [SerializeField] private List<ShopItem> bullets;
         [SerializeField] private List<ShopItem> shotVfx;
 
-        private readonly List<Image> pool = new List<Image>();
+        private readonly List<ShopItemView> pool = new List<ShopItemView>();
         private ShopCategory currentCategory = ShopCategory.Guns;
+        private PlayerWalletManager wallet;
+        private PlayerInventoryManager inventory;
+
+        private PlayerWalletManager Wallet => wallet ??= ServiceProvider.Instance.GetService<PlayerWalletManager>();
+        private PlayerInventoryManager Inventory => inventory ??= ServiceProvider.Instance.GetService<PlayerInventoryManager>();
 
         public void Setup()
         {
@@ -84,20 +91,63 @@ namespace _Game.Scripts.Shop
 
                 if (isUsed)
                 {
-                    pool[i].sprite = items[i].Sprite;
+                    pool[i].Bind(items[i]);
                 }
 
                 pool[i].gameObject.SetActive(isUsed);
             }
 
+            RefreshStates();
             ResizeContent(items.Count);
         }
 
         private void AddToPool()
         {
-            Image item = Instantiate(itemPrefab, scrollRect.content);
-            item.gameObject.SetActive(false);
-            pool.Add(item);
+            ShopItemView view = Instantiate(itemPrefab, scrollRect.content);
+            view.gameObject.SetActive(false);
+            view.Clicked += OnItemClicked;
+            pool.Add(view);
+        }
+
+        private void OnItemClicked(ShopItemView view)
+        {
+            ShopItem item = view.Item;
+
+            if (!Inventory.Owns(item))
+            {
+                if (!Wallet.SpendMoney(item.Price))
+                {
+                    Debug.LogWarning($"Not enough money to buy {item.name} ({item.Price})");
+                    return;
+                }
+
+                Inventory.Add(item);
+            }
+
+            Inventory.Equip(item);
+            RefreshStates();
+        }
+
+        private void RefreshStates()
+        {
+            foreach (ShopItemView view in pool)
+            {
+                if (view.gameObject.activeSelf)
+                {
+                    view.SetState(Inventory.Owns(view.Item), Inventory.IsEquipped(view.Item));
+                }
+            }
+        }
+
+        private void OnDestroy()
+        {
+            foreach (ShopItemView view in pool)
+            {
+                if (view != null)
+                {
+                    view.Clicked -= OnItemClicked;
+                }
+            }
         }
 
         private void ResizeContent(int itemCount)

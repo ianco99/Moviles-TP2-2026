@@ -22,7 +22,7 @@ namespace _Game.Scripts.Economy
 
         public bool SpendMoney(double amount)
         {
-            if (amount > playerMoney)
+            if (amount <= playerMoney)
             {
                 playerMoney -=  amount;
                 return true;

@@ -3,6 +3,7 @@
     "rootNamespace": "GunJump.UI",
     "references": [
         "GunJump.Core",
+        "GunJump.Economy",
         "Unity.TextMeshPro",
         "UnityEngine.UI"
     ],

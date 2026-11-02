@@ -15,8 +15,10 @@ namespace _Game.Scripts.Shop
     {
         [SerializeField] private Sprite sprite;
         [SerializeField] private ShopCategory category;
+        [SerializeField] private int price;
 
         public Sprite Sprite => sprite;
         public ShopCategory Category => category;
+        public int Price => price;
     }
 }
