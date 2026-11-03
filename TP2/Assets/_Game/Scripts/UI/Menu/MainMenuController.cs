@@ -3,6 +3,8 @@ using System.Collections;
 using System.Threading.Tasks;
 using _Game.Scripts.Shop;
 using GunJump.Core;
+using ianco99.ToolBox.Events;
+using ianco99.ToolBox.Services;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,14 +22,22 @@ namespace GunJump.UI
         [SerializeField] private ShopMenuController shopMenu;
 
         private bool picked = false;
-        
+        private EventBus eventBus;
+
+        private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
+
         private void Awake()
         {
             playButton.onClick.AddListener(PlayClicked);
             shopButton.onClick.AddListener(ShopClicked);
-            
+
             levelSelectMenu.Data();
             shopMenu.Setup();
+        }
+
+        private void Start()
+        {
+            EventBus.Raise<ShowMoneyCountEvent>();
         }
 
         private void ShopClicked()
@@ -57,11 +67,13 @@ namespace GunJump.UI
                 case "Play":
                     landingMenu.SetActive(false);
                     levelSelectMenu.gameObject.SetActive(true);
+                    EventBus.Raise<HideMoneyCountEvent>();
                     break;
                 case "Shop":
                     landingMenu.SetActive(false);
                     shopMenu.gameObject.SetActive(true);
                     shopMenu.WakeUp();
+                    EventBus.Raise<ShowMoneyCountEvent>();
                     break;
             }
         }

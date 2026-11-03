@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using _Game.Scripts.Economy;
+using GunJump.UI;
+using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
 using UnityEngine.UI;
@@ -26,9 +28,11 @@ namespace _Game.Scripts.Shop
         private ShopCategory currentCategory = ShopCategory.Guns;
         private PlayerWalletManager wallet;
         private PlayerInventoryManager inventory;
+        private EventBus eventBus;
 
         private PlayerWalletManager Wallet => wallet ??= ServiceProvider.Instance.GetService<PlayerWalletManager>();
         private PlayerInventoryManager Inventory => inventory ??= ServiceProvider.Instance.GetService<PlayerInventoryManager>();
+        private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
 
         public void Setup()
         {
@@ -122,6 +126,7 @@ namespace _Game.Scripts.Shop
                 }
 
                 Inventory.Add(item);
+                EventBus.Raise<ShowMoneyCountEvent>();
             }
 
             Inventory.Equip(item);
