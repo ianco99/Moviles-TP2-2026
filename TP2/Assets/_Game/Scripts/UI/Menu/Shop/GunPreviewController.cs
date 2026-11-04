@@ -8,10 +8,11 @@ using UnityEngine.UI;
 
 namespace _Game.Scripts.Shop
 {
-    // Muestra el arma equipada en el centro de la tienda, dando vueltas sobre su eje X (de punta,
+    // Muestra el arma equipada en el menú principal y en la tienda, dando vueltas sobre su eje X (de punta,
     // hacia la cámara) mientras flota subiendo y bajando. Una cámara propia la renderiza a una
-    // RenderTexture que se ve en un RawImage. Tiene que estar fuera del panel de la tienda para seguir
-    // escuchando eventos aunque el panel se desactive.
+    // RenderTexture que se ve en un RawImage. Se prende y se apaga con ShowGunPreviewEvent y
+    // HideGunPreviewEvent (los levanta MainMenuController); en la selección de nivel está apagada.
+    // Tiene que estar fuera de los paneles del menú para seguir escuchando eventos aunque se desactiven.
     public class GunPreviewController : MonoBehaviour
     {
         [Header("References")]
@@ -39,8 +40,8 @@ namespace _Game.Scripts.Shop
 
         private EventBus eventBus;
         private PlayerEquipment equipment;
-        private EventBus.EventCallback<ShopOpenedEvent> openedCallback;
-        private EventBus.EventCallback<ShopClosedEvent> closedCallback;
+        private EventBus.EventCallback<ShowGunPreviewEvent> showCallback;
+        private EventBus.EventCallback<HideGunPreviewEvent> hideCallback;
         private EventBus.EventCallback<EquippedItemChangedEvent> changedCallback;
 
         private RenderTexture renderTexture;
@@ -62,12 +63,12 @@ namespace _Game.Scripts.Shop
 
         private void Awake()
         {
-            openedCallback = OnShopOpened;
-            closedCallback = OnShopClosed;
+            showCallback = OnShowRequested;
+            hideCallback = OnHideRequested;
             changedCallback = OnEquippedChanged;
 
-            EventBus.Subscribe(openedCallback);
-            EventBus.Subscribe(closedCallback);
+            EventBus.Subscribe(showCallback);
+            EventBus.Subscribe(hideCallback);
             EventBus.Subscribe(changedCallback);
 
             restPosition = spinner.localPosition;
@@ -86,8 +87,8 @@ namespace _Game.Scripts.Shop
                 return;
             }
 
-            eventBus.UnSubscribe(openedCallback);
-            eventBus.UnSubscribe(closedCallback);
+            eventBus.UnSubscribe(showCallback);
+            eventBus.UnSubscribe(hideCallback);
             eventBus.UnSubscribe(changedCallback);
         }
 
@@ -124,7 +125,7 @@ namespace _Game.Scripts.Shop
             spinner.localRotation = restRotation;
         }
 
-        private void OnShopOpened(in ShopOpenedEvent e)
+        private void OnShowRequested(in ShowGunPreviewEvent e)
         {
             if (isOpen)
             {
@@ -138,7 +139,7 @@ namespace _Game.Scripts.Shop
             StartCoroutine(OpenRoutine());
         }
 
-        private void OnShopClosed(in ShopClosedEvent e)
+        private void OnHideRequested(in HideGunPreviewEvent e)
         {
             Close();
         }
@@ -187,7 +188,7 @@ namespace _Game.Scripts.Shop
             GameObject prefab = null;
             yield return Bundle.LoadAsset<GameObject>(modelName, loaded => prefab = loaded);
 
-            // Si mientras cargaba se pidió otra arma o se cerró la tienda, este resultado ya no sirve.
+            // Si mientras cargaba se pidió otra arma o se ocultó la vista previa, este resultado ya no sirve.
             if (id != requestId || !isOpen)
             {
                 yield break;
@@ -288,8 +289,8 @@ namespace _Game.Scripts.Shop
             requestId++;
             StopAllCoroutines();
 
-            // Las instancias se destruyen antes de descargar el bundle del que salieron. Con la tienda cerrada
-            // el menú no lo usa; el arma lo vuelve a cargar una sola vez al entrar al nivel.
+            // Las instancias se destruyen antes de descargar el bundle del que salieron. Se oculta al pasar a la
+            // selección de nivel, así que el menú ya no lo usa; el arma lo vuelve a cargar una sola vez al entrar al nivel.
             ClearInstance();
             bundle?.Unload();
 

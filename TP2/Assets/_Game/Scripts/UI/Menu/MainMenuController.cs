@@ -44,6 +44,7 @@ namespace GunJump.UI
         private void Start()
         {
             EventBus.Raise<ShowMoneyCountEvent>();
+            EventBus.Raise<ShowGunPreviewEvent>();
         }
 
         private void ShopClicked()
@@ -80,6 +81,8 @@ namespace GunJump.UI
                     landingMenu.SetActive(false);
                     levelSelectMenu.gameObject.SetActive(true);
                     EventBus.Raise<HideMoneyCountEvent>();
+                    // Además libera el bundle de armas, que el nivel vuelve a abrir.
+                    EventBus.Raise<HideGunPreviewEvent>();
                     break;
                 case "Shop":
                     landingMenu.SetActive(false);

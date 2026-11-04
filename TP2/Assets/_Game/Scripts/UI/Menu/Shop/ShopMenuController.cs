@@ -24,7 +24,6 @@ namespace _Game.Scripts.Shop
         private PlayerInventoryManager inventory;
         private PlayerEquipment equipment;
         private EventBus eventBus;
-        private bool isOpen;
 
         private PlayerWalletManager Wallet => wallet ??= ServiceProvider.Instance.GetService<PlayerWalletManager>();
         private PlayerInventoryManager Inventory => inventory ??= ServiceProvider.Instance.GetService<PlayerInventoryManager>();
@@ -47,20 +46,6 @@ namespace _Game.Scripts.Shop
         public void WakeUp()
         {
             ShowCategory();
-            isOpen = true;
-            EventBus.Raise<ShopOpenedEvent>();
-        }
-
-        // Quien cierre la tienda la desactiva; acá avisamos para que se liberen los modelos.
-        private void OnDisable()
-        {
-            if (!isOpen)
-            {
-                return;
-            }
-
-            isOpen = false;
-            eventBus?.Raise<ShopClosedEvent>();
         }
 
         public void ShowCategory()
