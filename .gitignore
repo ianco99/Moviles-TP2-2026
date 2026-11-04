@@ -84,3 +84,6 @@ Docs/plan-tecnico.md
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+
+# Gun model AssetBundles (built by GunJump > Asset Bundles and before each player build)
+TP2/AssetBundles/

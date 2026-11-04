@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 879848d5b9e57b646932404862a8cdde, type: 3}
+  m_Name: ShopCatalog
+  m_EditorClassIdentifier: GunJump.Economy::_Game.Scripts.Shop.ShopCatalog
+  guns:
+  - {fileID: 11400000, guid: 45e9de7ce6f455131909b15760146264, type: 2}
+  - {fileID: 11400000, guid: e59396299c02869cc9a435308d3959ea, type: 2}
+  - {fileID: 11400000, guid: 54a2fb0185955ea7d859806eb2af69dc, type: 2}
+  - {fileID: 11400000, guid: e211007858c268702b1a7cc87a2e7fe2, type: 2}
+  - {fileID: 11400000, guid: 6cce1a77ff07c89ad8ad670869dca600, type: 2}
+  - {fileID: 11400000, guid: 0dfef253fbf17e0ba8a8711321ade962, type: 2}
+  - {fileID: 11400000, guid: 2f1fb75d3d4e4625193e7ea8523e5d10, type: 2}
+  - {fileID: 11400000, guid: ee5fbc1ad38380035b052bd71387a3b5, type: 2}
+  - {fileID: 11400000, guid: 24675a3cd431dddf884a7cf54f496b3b, type: 2}
+  - {fileID: 11400000, guid: 263459826dc8d78aa812c99ac855907c, type: 2}
+  gunSkins:
+  - {fileID: 11400000, guid: 3fa8cc45b276c03e08c8a98be4fbcf9e, type: 2}
+  - {fileID: 11400000, guid: d3f2be0cba6e7192386594f67d76d8b5, type: 2}
+  - {fileID: 11400000, guid: 34c92352ef3409865b028f43710a67b2, type: 2}
+  - {fileID: 11400000, guid: a104010fce8014c92905d24e6f7b8742, type: 2}
+  - {fileID: 11400000, guid: 3c295db901cacace8bc8bcdf6ead6a48, type: 2}
+  - {fileID: 11400000, guid: febdb5036f3a32bc18376f70482640b6, type: 2}
+  - {fileID: 11400000, guid: f03567be3cfd1bd84909efa04cdceb83, type: 2}
+  - {fileID: 11400000, guid: 0562bdf2c11774007a0a41431985f239, type: 2}
+  - {fileID: 11400000, guid: a5be1ceaf5cb2d3d580cfb3d2a629ae0, type: 2}
+  - {fileID: 11400000, guid: 82ede74f74fc2bd1081248aeddd25597, type: 2}
+  bullets: []
+  shotVfx: []
+  defaultGun: {fileID: 11400000, guid: 6cce1a77ff07c89ad8ad670869dca600, type: 2}

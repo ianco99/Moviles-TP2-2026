@@ -14,3 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: GunJump.UI::_Game.Scripts.Shop.ShopItem
   sprite: {fileID: 21300000, guid: 43deb377283589db88b344bde1137258, type: 3}
   category: 0
+  price: 200
+  modelName: blaster-p

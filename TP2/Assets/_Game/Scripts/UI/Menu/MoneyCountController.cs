@@ -6,7 +6,6 @@ using UnityEngine;
 
 namespace GunJump.UI
 {
-    // Va en un objeto que siempre está activo (Menu): si estuviera en MoneyCount, al ocultarlo dejaría de escuchar.
     public class MoneyCountController : MonoBehaviour
     {
         [Header("References")]

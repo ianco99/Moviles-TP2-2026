@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using _Game.Scripts.Economy;
 using GunJump.UI;
@@ -19,19 +18,19 @@ namespace _Game.Scripts.Shop
         [SerializeField] private int initialPoolSize = 20;
 
         [Header("Items")]
-        [SerializeField] private List<ShopItem> guns;
-        [SerializeField] private List<ShopItem> gunSkins;
-        [SerializeField] private List<ShopItem> bullets;
-        [SerializeField] private List<ShopItem> shotVfx;
+        [SerializeField] private ShopCatalog catalog;
 
         private readonly List<ShopItemView> pool = new List<ShopItemView>();
         private ShopCategory currentCategory = ShopCategory.Guns;
         private PlayerWalletManager wallet;
         private PlayerInventoryManager inventory;
+        private PlayerEquipment equipment;
         private EventBus eventBus;
+        private bool isOpen;
 
         private PlayerWalletManager Wallet => wallet ??= ServiceProvider.Instance.GetService<PlayerWalletManager>();
         private PlayerInventoryManager Inventory => inventory ??= ServiceProvider.Instance.GetService<PlayerInventoryManager>();
+        private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
 
         public void Setup()
@@ -52,34 +51,31 @@ namespace _Game.Scripts.Shop
         public void WakeUp()
         {
             ShowCategory();
+            isOpen = true;
+            EventBus.Raise<ShopOpenedEvent>();
+        }
+
+        // Quien cierre la tienda la desactiva; acá avisamos para que se liberen los modelos.
+        private void OnDisable()
+        {
+            if (!isOpen)
+            {
+                return;
+            }
+
+            isOpen = false;
+            eventBus?.Raise<ShopClosedEvent>();
         }
 
         public void ShowCategory()
         {
-            ShowItems(GetItems(currentCategory));
+            ShowItems(catalog.GetItems(currentCategory));
         }
 
         public void SelectCategory(int category)
         {
             currentCategory = (ShopCategory)category;
             ShowCategory();
-        }
-
-        private IReadOnlyList<ShopItem> GetItems(ShopCategory category)
-        {
-            switch (category)
-            {
-                case ShopCategory.Guns:
-                    return guns;
-                case ShopCategory.GunSkins:
-                    return gunSkins;
-                case ShopCategory.Bullets:
-                    return bullets;
-                case ShopCategory.ShotVFX:
-                    return shotVfx;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(category), category, null);
-            }
         }
 
         private void ShowItems(IReadOnlyList<ShopItem> items)
@@ -129,8 +125,9 @@ namespace _Game.Scripts.Shop
                 EventBus.Raise<ShowMoneyCountEvent>();
             }
 
-            Inventory.Equip(item);
+            Equipment.Equip(item);
             RefreshStates();
+            EventBus.Raise<EquippedItemChangedEvent>();
         }
 
         private void RefreshStates()
@@ -139,7 +136,7 @@ namespace _Game.Scripts.Shop
             {
                 if (view.gameObject.activeSelf)
                 {
-                    view.SetState(Inventory.Owns(view.Item), Inventory.IsEquipped(view.Item));
+                    view.SetState(Inventory.Owns(view.Item), Equipment.IsEquipped(view.Item));
                 }
             }
         }
