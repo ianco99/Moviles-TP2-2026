@@ -15,11 +15,16 @@ namespace GunJump.UI
         [Header("Buttons")]
         [SerializeField] private Button playButton;
         [SerializeField] private Button shopButton;
+        [SerializeField] private Button shopBackButton;
         
         [Header("References")]
         [SerializeField] private GameObject landingMenu;
         [SerializeField] private LevelsMenuController levelSelectMenu;
         [SerializeField] private ShopMenuController shopMenu;
+
+        [Header("Layout")]
+        [Tooltip("Distancia del botón de volver de la tienda a la esquina superior izquierda del área segura.")]
+        [SerializeField] private Vector2 shopBackMargin = new Vector2(50f, 50f);
 
         private bool picked = false;
         private EventBus eventBus;
@@ -30,6 +35,7 @@ namespace GunJump.UI
         {
             playButton.onClick.AddListener(PlayClicked);
             shopButton.onClick.AddListener(ShopClicked);
+            shopBackButton.onClick.AddListener(ShopBackClicked);
 
             levelSelectMenu.Data();
             shopMenu.Setup();
@@ -46,7 +52,13 @@ namespace GunJump.UI
             StartCoroutine(WaitForAnim("Shop"));
         }
 
-        public void PlayClicked()
+        private void ShopBackClicked()
+        {
+            if(!picked)
+                StartCoroutine(WaitForAnim("ShopBack"));
+        }
+        
+        private void PlayClicked()
         {
             if(!picked)
             StartCoroutine(WaitForAnim("Play"));
@@ -73,9 +85,27 @@ namespace GunJump.UI
                     landingMenu.SetActive(false);
                     shopMenu.gameObject.SetActive(true);
                     shopMenu.WakeUp();
+                    KeepShopBackInSafeArea();
                     EventBus.Raise<ShowMoneyCountEvent>();
                     break;
+                case "ShopBack":
+                    landingMenu.SetActive(true);
+                    shopMenu.gameObject.SetActive(false);
+                    break;
             }
+        }
+
+        // Corre el botón para que no quede debajo del notch o de la cámara perforada (anchor y pivot arriba a la izquierda).
+        private void KeepShopBackInSafeArea()
+        {
+            SafeAreaMath.Anchors(Screen.safeArea, Screen.width, Screen.height, out Vector2 anchorMin, out Vector2 anchorMax);
+
+            RectTransform backRect = (RectTransform)shopBackButton.transform;
+            Rect parentRect = ((RectTransform)backRect.parent).rect;
+            float insetLeft = anchorMin.x * parentRect.width;
+            float insetTop = (1f - anchorMax.y) * parentRect.height;
+
+            backRect.anchoredPosition = new Vector2(shopBackMargin.x + insetLeft, -(shopBackMargin.y + insetTop));
         }
     }
 }
