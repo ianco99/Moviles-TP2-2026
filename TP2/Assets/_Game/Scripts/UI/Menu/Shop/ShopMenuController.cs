@@ -10,8 +10,6 @@ namespace _Game.Scripts.Shop
 {
     public class ShopMenuController : MonoBehaviour
     {
-        private static readonly Vector2 ItemSize = new Vector2(200f, 200f);
-
         [SerializeField] private ShopItemView itemPrefab;
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private GridLayoutGroup grid;
@@ -39,8 +37,6 @@ namespace _Game.Scripts.Shop
             {
                 return;
             }
-
-            grid.cellSize = ItemSize;
 
             for (int i = 0; i < initialPoolSize; i++)
             {
@@ -157,11 +153,23 @@ namespace _Game.Scripts.Shop
             RectTransform content = scrollRect.content;
             RectOffset padding = grid.padding;
             Vector2 spacing = grid.spacing;
+            Vector2 cellSize = grid.cellSize;
 
-            float usableWidth = content.rect.width - padding.horizontal + spacing.x;
-            int columns = Mathf.Max(1, Mathf.FloorToInt(usableWidth / (ItemSize.x + spacing.x)));
+            int columns;
+
+            if (grid.constraint == GridLayoutGroup.Constraint.FixedColumnCount)
+            {
+                columns = grid.constraintCount;
+            }
+            else
+            {
+                float usableWidth = content.rect.width - padding.horizontal + spacing.x;
+                columns = Mathf.FloorToInt(usableWidth / (cellSize.x + spacing.x));
+            }
+
+            columns = Mathf.Max(1, columns);
             int rows = Mathf.CeilToInt((float)itemCount / columns);
-            float height = padding.vertical + rows * ItemSize.y + Mathf.Max(0, rows - 1) * spacing.y;
+            float height = padding.vertical + rows * cellSize.y + Mathf.Max(0, rows - 1) * spacing.y;
 
             content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
             scrollRect.verticalNormalizedPosition = 1f;

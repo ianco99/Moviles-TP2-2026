@@ -12,6 +12,7 @@ namespace _Game.Scripts.Bootstrap
     public class Bootstrapper : MonoBehaviour
     {
         //TODO: Remove once levels pay into the wallet
+        [Tooltip("Monedas con las que arranca una partida nueva. Solo se dan si todavía no hay billetera guardada.")]
         [SerializeField] private double startingMoney;
         [SerializeField] private ShopCatalog catalog;
 
@@ -24,34 +25,39 @@ namespace _Game.Scripts.Bootstrap
                 services.AddService<EventBus>(new EventBus());
             }
 
-            if (!services.ContainsService<PlayerWalletManager>())
+            // Los servicios de la economía viven toda la sesión: se crean y se cargan del guardado una sola vez.
+            if (services.ContainsService<PlayerWalletManager>())
             {
-                PlayerWalletManager wallet = new PlayerWalletManager();
+                return;
+            }
+
+            if (catalog == null)
+            {
+                Debug.LogError("Bootstrapper: falta asignar el ShopCatalog; no se registran la billetera, el inventario ni el equipamiento.", this);
+                return;
+            }
+
+            PlayerWalletManager wallet = new PlayerWalletManager();
+            PlayerInventoryManager inventory = new PlayerInventoryManager(catalog);
+            PlayerEquipment equipment = new PlayerEquipment(catalog);
+
+            // Desde acá, cada cambio en la billetera o el inventario se guarda solo.
+            EconomySave save = new EconomySave(wallet, inventory);
+
+            if (!save.Load())
+            {
                 wallet.AddMoney(startingMoney);
-                services.AddService<PlayerWalletManager>(wallet);
             }
 
-            if (!services.ContainsService<PlayerInventoryManager>())
-            {
-                services.AddService<PlayerInventoryManager>(new PlayerInventoryManager());
-            }
+            OwnEquippedItems(equipment, inventory);
 
-            if (!services.ContainsService<PlayerEquipment>())
-            {
-                if (catalog == null)
-                {
-                    Debug.LogError("Bootstrapper: falta asignar el ShopCatalog; PlayerEquipment no se registra.", this);
-                    return;
-                }
-
-                PlayerEquipment equipment = new PlayerEquipment(catalog);
-                services.AddService<PlayerEquipment>(equipment);
-                OwnEquippedItems(equipment, services.GetService<PlayerInventoryManager>());
-            }
+            services.AddService<PlayerWalletManager>(wallet);
+            services.AddService<PlayerInventoryManager>(inventory);
+            services.AddService<PlayerEquipment>(equipment);
         }
 
-        //TODO: Remove once owned items are saved too. Hasta entonces, lo equipado (que sí se guarda)
-        // tiene que figurar como comprado, si no la tienda lo mostraría equipado y con precio.
+        // Lo equipado siempre figura como comprado. Cubre el arma por defecto, que se equipa sin comprarla,
+        // y los guardados de antes de que se guardara el inventario. Si alguno era nuevo, el inventario lo guarda.
         private static void OwnEquippedItems(PlayerEquipment equipment, PlayerInventoryManager inventory)
         {
             foreach (ShopCategory category in Enum.GetValues(typeof(ShopCategory)))
