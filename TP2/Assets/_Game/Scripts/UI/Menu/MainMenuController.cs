@@ -37,7 +37,7 @@ namespace GunJump.UI
             shopButton.onClick.AddListener(ShopClicked);
             shopBackButton.onClick.AddListener(ShopBackClicked);
 
-            levelSelectMenu.Data();
+            levelSelectMenu.Setup();
             shopMenu.Setup();
         }
 

@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: caac41caebde4eca92a999bdbd5278b7, type: 3}
   m_Name: LevelListSO
   m_EditorClassIdentifier: GunJump.Core::GunJump.Core.LevelListSO
-  levelBuildIDs: 0000000000000000000000000000000000000000
+  levelBuildIDs: 01000000
