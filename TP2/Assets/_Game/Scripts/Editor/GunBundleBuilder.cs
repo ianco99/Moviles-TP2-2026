@@ -19,7 +19,7 @@ namespace GunJump.EditorTools
         internal static readonly BundleSource[] Sources =
         {
             new BundleSource(ShopCategory.Guns, "Assets/_Game/Art/Models", "t:Model", required: true),
-            new BundleSource(ShopCategory.GunSkins, "Assets/_Game/Art/Skins", "t:Material", required: false),
+            new BundleSource(ShopCategory.GunSkins, "Assets/_Game/Art/Materials/Skins", "t:Material", required: false),
             new BundleSource(ShopCategory.Bullets, "Assets/_Game/Prefabs/Loadout/Bullets", "t:Prefab", required: false),
             new BundleSource(ShopCategory.ShotVFX, "Assets/_Game/Prefabs/Loadout/ShotVfx", "t:Prefab", required: false),
         };

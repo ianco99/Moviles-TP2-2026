@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 namespace _Game.Scripts.Shop
 {
-    // Muestra el arma equipada en el menú principal y en la tienda, dando vueltas sobre su eje X (de punta,
+    // Muestra el arma equipada, con su skin, en el menú principal y en la tienda, dando vueltas sobre su eje X (de punta,
     // hacia la cámara) mientras flota subiendo y bajando. Una cámara propia la renderiza a una
     // RenderTexture que se ve en un RawImage. Se prende y se apaga con ShowGunPreviewEvent y
     // HideGunPreviewEvent (los levanta MainMenuController); en la selección de nivel está apagada.
@@ -37,6 +37,7 @@ namespace _Game.Scripts.Shop
         [SerializeField] private int antiAliasing = 4;
 
         private ContentBundle bundle;
+        private ContentBundle skinBundle;
 
         private EventBus eventBus;
         private PlayerEquipment equipment;
@@ -47,6 +48,7 @@ namespace _Game.Scripts.Shop
         private RenderTexture renderTexture;
         private GameObject instance;
         private string shownModel;
+        private string shownSkin;
         private int requestId;
         private bool isOpen;
 
@@ -58,8 +60,9 @@ namespace _Game.Scripts.Shop
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
         private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
 
-        // El mismo bundle que usa el arma en los niveles: Unity no deja abrir dos veces el mismo.
+        // Los mismos bundles que usa el arma en los niveles: Unity no deja abrir dos veces el mismo.
         private ContentBundle Bundle => bundle ??= ServiceProvider.Instance.GetService<ContentLibrary>().Get(ShopBundles.Guns);
+        private ContentBundle SkinBundle => skinBundle ??= ServiceProvider.Instance.GetService<ContentLibrary>().Get(ShopBundles.Skins);
 
         private void Awake()
         {
@@ -174,21 +177,35 @@ namespace _Game.Scripts.Shop
                 return;
             }
 
-            if (modelName == shownModel)
+            // Sin skin equipada o sin Asset Name, el arma se muestra con sus propios materiales.
+            ShopItem skin = Equipment.GetEquipped(ShopCategory.GunSkins);
+            string skinName = skin != null && !string.IsNullOrEmpty(skin.AssetName) ? skin.AssetName : null;
+
+            if (modelName == shownModel && skinName == shownSkin)
             {
                 return;
             }
 
             requestId++;
-            StartCoroutine(SwapRoutine(modelName, requestId));
+            StartCoroutine(SwapRoutine(modelName, skinName, requestId));
         }
 
-        private IEnumerator SwapRoutine(string modelName, int id)
+        // Ante cualquier cambio se vuelve a instanciar el modelo: así, sacar la skin le devuelve sus materiales.
+        // El pivote sigue girando con su pose, así que el cambio no se nota como un salto.
+        private IEnumerator SwapRoutine(string modelName, string skinName, int id)
         {
             GameObject prefab = null;
             yield return Bundle.LoadAsset<GameObject>(modelName, loaded => prefab = loaded);
 
-            // Si mientras cargaba se pidió otra arma o se ocultó la vista previa, este resultado ya no sirve.
+            Material skin = null;
+
+            if (skinName != null)
+            {
+                yield return SkinBundle.LoadBundle();
+                yield return SkinBundle.LoadAsset<Material>(skinName, loaded => skin = loaded);
+            }
+
+            // Si mientras cargaba se pidió otra arma u otra skin, o se ocultó la vista previa, este resultado ya no sirve.
             if (id != requestId || !isOpen)
             {
                 yield break;
@@ -203,12 +220,16 @@ namespace _Game.Scripts.Shop
 
             instance = Instantiate(prefab, spinner);
             shownModel = modelName;
-            FitToSpinner(instance.transform);
+            shownSkin = skinName;
+
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>();
+            GunSkin.Apply(renderers, skin);
+            FitToSpinner(instance.transform, renderers);
             target.enabled = true;
         }
 
         // Centra el modelo en el pivote y lo escala para que el círculo que barre al girar sobre X mida spinSize.
-        private void FitToSpinner(Transform model)
+        private void FitToSpinner(Transform model, Renderer[] renderers)
         {
             Quaternion spin = spinner.rotation;
             spinner.rotation = Quaternion.identity;
@@ -216,8 +237,6 @@ namespace _Game.Scripts.Shop
             model.localPosition = Vector3.zero;
             model.localRotation = Quaternion.Euler(modelRotation);
             model.localScale = Vector3.one;
-
-            Renderer[] renderers = model.GetComponentsInChildren<Renderer>();
 
             if (renderers.Length > 0)
             {
@@ -271,6 +290,7 @@ namespace _Game.Scripts.Shop
             }
 
             shownModel = null;
+            shownSkin = null;
 
             if (target != null)
             {
@@ -289,10 +309,11 @@ namespace _Game.Scripts.Shop
             requestId++;
             StopAllCoroutines();
 
-            // Las instancias se destruyen antes de descargar el bundle del que salieron. Se oculta al pasar a la
-            // selección de nivel, así que el menú ya no lo usa; el arma lo vuelve a cargar una sola vez al entrar al nivel.
+            // Las instancias se destruyen antes de descargar los bundles de los que salieron. Se oculta al pasar a la
+            // selección de nivel, así que el menú ya no los usa; el arma los vuelve a cargar una sola vez al entrar al nivel.
             ClearInstance();
             bundle?.Unload();
+            skinBundle?.Unload();
 
             // Al descargar la escena, la cámara o el RawImage pueden haberse destruido antes que este componente.
             if (previewCamera != null)

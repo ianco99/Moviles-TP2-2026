@@ -17,7 +17,22 @@ namespace _Game.Scripts.Shop
         [Tooltip("Arma equipada cuando el jugador todavía no eligió ninguna.")]
         [SerializeField] private ShopItem defaultGun;
 
-        public ShopItem DefaultGun => defaultGun;
+        [Tooltip("Skin equipada cuando el jugador todavía no eligió ninguna. Vacío = el arma con sus propios materiales.")]
+        [SerializeField] private ShopItem defaultSkin;
+
+        // Lo que queda equipado en una categoría si el jugador nunca eligió nada; null si esa categoría no tiene.
+        public ShopItem GetDefault(ShopCategory category)
+        {
+            switch (category)
+            {
+                case ShopCategory.Guns:
+                    return defaultGun;
+                case ShopCategory.GunSkins:
+                    return defaultSkin;
+                default:
+                    return null;
+            }
+        }
 
         public IReadOnlyList<ShopItem> GetItems(ShopCategory category)
         {

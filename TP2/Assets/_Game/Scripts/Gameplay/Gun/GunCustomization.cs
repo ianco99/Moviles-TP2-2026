@@ -202,19 +202,7 @@ namespace GunJump.Gameplay
 
         void ApplySkin(Material skin)
         {
-            if (skin == null)
-                return;
-
-            Renderer[] targets = model != null ? modelRenderers : placeholder;
-
-            foreach (Renderer target in targets)
-            {
-                Material[] materials = target.sharedMaterials;
-                for (int i = 0; i < materials.Length; i++)
-                    materials[i] = skin;
-
-                target.sharedMaterials = materials;
-            }
+            GunSkin.Apply(model != null ? modelRenderers : placeholder, skin);
         }
 
         // El prefab queda como hijo de la boca del cañón con su transform tal cual:

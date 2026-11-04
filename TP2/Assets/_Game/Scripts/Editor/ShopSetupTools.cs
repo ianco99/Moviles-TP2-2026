@@ -11,6 +11,7 @@ namespace GunJump.EditorTools
         private const string ShopDataFolder = "Assets/_Game/Data/Shop";
         private const string CatalogPath = ShopDataFolder + "/ShopCatalog.asset";
         private const string DefaultGunPath = ShopDataFolder + "/Guns/Guns_Pistol.asset";
+        private const string DefaultSkinPath = ShopDataFolder + "/Skins/Skins_Common.asset";
         private const string StageName = "GunPreviewStage";
         private static readonly Vector3 StagePosition = new Vector3(0f, -1000f, 0f);
 
@@ -55,6 +56,7 @@ namespace GunJump.EditorTools
             Fill(serialized.FindProperty("bullets"), byCategory, ShopCategory.Bullets);
             Fill(serialized.FindProperty("shotVfx"), byCategory, ShopCategory.ShotVFX);
             serialized.FindProperty("defaultGun").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DefaultGunPath);
+            serialized.FindProperty("defaultSkin").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DefaultSkinPath);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             // CreateAsset sobre un archivo existente le cambiaría el GUID y rompería las referencias: copiamos encima.

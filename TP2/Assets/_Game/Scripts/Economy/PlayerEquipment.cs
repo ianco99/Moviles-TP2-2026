@@ -33,7 +33,8 @@ namespace _Game.Scripts.Economy
             return item != null && GetEquipped(item.Category) == item;
         }
 
-        // Devuelve null si no hay nada equipado en esa categoría (salvo armas, que caen en DefaultGun).
+        // Si el jugador nunca eligió nada en esa categoría, cae en el default del catálogo (arma y skin);
+        // devuelve null si la categoría no tiene default.
         public ShopItem GetEquipped(ShopCategory category)
         {
             if (equipped.TryGetValue(category, out ShopItem item))
@@ -43,9 +44,9 @@ namespace _Game.Scripts.Economy
 
             item = catalog.Find(category, PlayerPrefs.GetString(KeyPrefix + category, string.Empty));
 
-            if (item == null && category == ShopCategory.Guns)
+            if (item == null)
             {
-                item = catalog.DefaultGun;
+                item = catalog.GetDefault(category);
             }
 
             if (item != null)
