@@ -14,8 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.CameraTuning
   yaw: 58.5
   pitch: 6
-  distance: 27
+  distance: 10
   lookAhead: 1.43
   verticalOffset: 1.14
-  visibleWidth: 14
+  visibleWidth: 6.44
   smoothTime: 0.15

@@ -1,19 +1,28 @@
 using System.Collections.Generic;
 using System.IO;
 using _Game.Scripts.Shop;
+using GunJump.Core;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEngine;
 
 namespace GunJump.EditorTools
 {
-    // Arma el AssetBundle "guns" con todos los modelos de Art/Models.
-    // - Para Play mode: GunJump > Asset Bundles > Build Gun Bundle (Editor), o solo, al dar Play si falta.
-    // - Para el build: se arma solo antes de cada build del jugador y se copia a StreamingAssets,
-    //   así que nunca hay que commitearlo ni se puede subir uno viejo.
+    // Arma los AssetBundles del arma, uno por categoría de la tienda (ver Sources).
+    // - Para Play mode: GunJump > Asset Bundles > Build Gun Bundles (Editor), o solo, al dar Play si falta alguno.
+    // - Para el build: se arman solos antes de cada build del jugador y se copian a StreamingAssets,
+    //   así que nunca hay que commitearlos ni se puede subir uno viejo.
     public sealed class GunBundleBuilder : BuildPlayerProcessor
     {
-        private const string ModelsFolder = "Assets/_Game/Art/Models";
+        // De dónde sale cada bundle. Solo los modelos de armas son obligatorios: una categoría
+        // sin contenido no arma bundle y sus items usan lo que el arma trae por defecto.
+        internal static readonly BundleSource[] Sources =
+        {
+            new BundleSource(ShopCategory.Guns, "Assets/_Game/Art/Models", "t:Model", required: true),
+            new BundleSource(ShopCategory.GunSkins, "Assets/_Game/Art/Skins", "t:Material", required: false),
+            new BundleSource(ShopCategory.Bullets, "Assets/_Game/Prefabs/Loadout/Bullets", "t:Prefab", required: false),
+            new BundleSource(ShopCategory.ShotVFX, "Assets/_Game/Prefabs/Loadout/ShotVfx", "t:Prefab", required: false),
+        };
 
         public override int callbackOrder => 0;
 
@@ -21,16 +30,16 @@ namespace GunJump.EditorTools
         {
             BuildTarget target = buildPlayerContext.BuildPlayerOptions.target;
             string output = Build(target, target.ToString());
-            buildPlayerContext.AddAdditionalPathToStreamingAssets(output, GunModelBundle.StreamingFolder);
+            buildPlayerContext.AddAdditionalPathToStreamingAssets(output, ContentBundle.StreamingFolder);
         }
 
-        [MenuItem("GunJump/Asset Bundles/Build Gun Bundle (Editor)")]
+        [MenuItem("GunJump/Asset Bundles/Build Gun Bundles (Editor)")]
         private static void BuildForEditorMenu()
         {
             try
             {
                 string output = BuildForEditor();
-                EditorUtility.RevealInFinder(Path.Combine(output, GunModelBundle.BundleName));
+                EditorUtility.RevealInFinder(Path.Combine(output, ShopBundles.Guns));
             }
             catch (BuildFailedException e)
             {
@@ -43,7 +52,7 @@ namespace GunJump.EditorTools
         //   GooglePlayGames solo compilan para Android;
         // - armarlo para otra plataforma que la activa puede dejar el Editor cambiado a esa plataforma
         //   si el build falla (ya pasó: quedó en Windows).
-        // Los shaders de un bundle de Android no andan en el Editor; GunModelBundle los reemplaza al cargar.
+        // Los shaders de un bundle de Android no andan en el Editor; ContentBundle los reemplaza al cargar.
         public static string BuildForEditor()
         {
             BuildTarget active = EditorUserBuildSettings.activeBuildTarget;
@@ -52,98 +61,164 @@ namespace GunJump.EditorTools
             {
                 throw new BuildFailedException(
                     $"La plataforma activa es {active}, no Android. Cambiá a Android en File > Build Profiles " +
-                    "y volvé a armar el bundle de armas.");
+                    "y volvé a armar los bundles del arma.");
             }
 
-            return Build(BuildTarget.Android, GunModelBundle.EditorPlatformFolder);
+            return Build(BuildTarget.Android, ContentBundle.EditorPlatformFolder);
         }
 
-        // Devuelve la carpeta donde quedó el bundle.
+        // Devuelve la carpeta donde quedaron los bundles.
         private static string Build(BuildTarget target, string platformFolder)
         {
-            string output = Path.Combine(GunModelBundle.OutputRoot, platformFolder);
+            string output = Path.Combine(ContentBundle.OutputRoot, platformFolder);
             Directory.CreateDirectory(output);
 
-            AssetBundleBuild build = CreateBuild(out HashSet<string> modelNames);
+            var builds = new List<AssetBundleBuild>(Sources.Length);
+            var contents = new Dictionary<ShopCategory, HashSet<string>>();
+
+            foreach (BundleSource source in Sources)
+            {
+                HashSet<string> assetNames = source.FindAssetNames(out AssetBundleBuild build);
+                contents.Add(source.Category, assetNames);
+
+                if (assetNames.Count > 0)
+                {
+                    builds.Add(build);
+                }
+                else if (source.Required)
+                {
+                    throw new BuildFailedException($"No hay assets en {source.Folder} para el AssetBundle '{source.BundleName}'.");
+                }
+                else
+                {
+                    Debug.Log($"AssetBundle '{source.BundleName}': no hay contenido en {source.Folder}; " +
+                              $"los items de {source.Category} usan lo que el arma trae por defecto.");
+                }
+            }
+
             AssetBundleManifest manifest = BuildPipeline.BuildAssetBundles(
                 output,
-                new[] { build },
+                builds.ToArray(),
                 BuildAssetBundleOptions.ChunkBasedCompression | BuildAssetBundleOptions.StrictMode,
                 target);
 
             if (manifest == null)
             {
-                throw new BuildFailedException($"No se pudo armar el AssetBundle '{GunModelBundle.BundleName}' para {target}.");
+                throw new BuildFailedException($"No se pudieron armar los AssetBundles del arma para {target}.");
             }
 
-            Debug.Log($"AssetBundle '{GunModelBundle.BundleName}' para {target}: {modelNames.Count} modelos en {Path.GetFullPath(output)}");
-            ValidateCatalogs(modelNames);
+            foreach (AssetBundleBuild build in builds)
+            {
+                Debug.Log($"AssetBundle '{build.assetBundleName}' para {target}: {build.assetNames.Length} assets en {Path.GetFullPath(output)}");
+            }
+
+            ValidateCatalogs(contents);
             return output;
         }
 
-        private static AssetBundleBuild CreateBuild(out HashSet<string> modelNames)
-        {
-            string[] guids = AssetDatabase.FindAssets("t:Model", new[] { ModelsFolder });
-            var assetNames = new List<string>(guids.Length);
-            var addressableNames = new List<string>(guids.Length);
-            modelNames = new HashSet<string>();
-
-            foreach (string guid in guids)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                string modelName = Path.GetFileNameWithoutExtension(path);
-
-                if (!modelNames.Add(modelName))
-                {
-                    throw new BuildFailedException($"Hay dos modelos llamados '{modelName}' en {ModelsFolder}; el bundle los pide por nombre.");
-                }
-
-                assetNames.Add(path);
-                addressableNames.Add(modelName);
-            }
-
-            if (assetNames.Count == 0)
-            {
-                throw new BuildFailedException($"No hay modelos en {ModelsFolder} para el AssetBundle '{GunModelBundle.BundleName}'.");
-            }
-
-            return new AssetBundleBuild
-            {
-                assetBundleName = GunModelBundle.BundleName,
-                assetNames = assetNames.ToArray(),
-                addressableNames = addressableNames.ToArray()
-            };
-        }
-
-        // Avisa de las armas del catálogo cuyo Model Name no está en el bundle (no frena el build).
-        private static void ValidateCatalogs(HashSet<string> modelNames)
+        // Avisa de los items del catálogo cuyo Asset Name no está en el bundle de su categoría (no frena el build).
+        // Las categorías sin contenido no avisan: todavía no se espera que sus items tengan Asset Name.
+        private static void ValidateCatalogs(Dictionary<ShopCategory, HashSet<string>> contents)
         {
             foreach (string guid in AssetDatabase.FindAssets("t:ShopCatalog"))
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 ShopCatalog catalog = AssetDatabase.LoadAssetAtPath<ShopCatalog>(path);
 
-                foreach (ShopItem gun in catalog.GetItems(ShopCategory.Guns))
+                foreach (BundleSource source in Sources)
                 {
-                    if (gun == null)
+                    HashSet<string> assetNames = contents[source.Category];
+
+                    if (assetNames.Count == 0)
                     {
                         continue;
                     }
 
-                    if (string.IsNullOrEmpty(gun.ModelName))
+                    var problems = new List<string>();
+
+                    foreach (ShopItem item in catalog.GetItems(source.Category))
                     {
-                        Debug.LogWarning($"{gun.name} no tiene Model Name: la tienda no va a poder mostrar su modelo.", gun);
+                        if (item == null)
+                        {
+                            continue;
+                        }
+
+                        if (string.IsNullOrEmpty(item.AssetName))
+                        {
+                            problems.Add($"{item.name} (sin Asset Name)");
+                        }
+                        else if (!assetNames.Contains(item.AssetName))
+                        {
+                            problems.Add($"{item.name} ('{item.AssetName}' no está en {source.Folder})");
+                        }
                     }
-                    else if (!modelNames.Contains(gun.ModelName))
+
+                    if (problems.Count > 0)
                     {
-                        Debug.LogWarning($"{gun.name} pide el modelo '{gun.ModelName}', que no está en {ModelsFolder}.", gun);
+                        Debug.LogWarning($"{catalog.name}, {source.Category}: estos items van a usar lo que el arma trae por defecto: " +
+                                         string.Join(", ", problems), catalog);
                     }
                 }
             }
         }
+
+        internal sealed class BundleSource
+        {
+            public readonly ShopCategory Category;
+            public readonly string Folder;
+            public readonly string Filter;
+            public readonly bool Required;
+
+            public BundleSource(ShopCategory category, string folder, string filter, bool required)
+            {
+                Category = category;
+                Folder = folder;
+                Filter = filter;
+                Required = required;
+            }
+
+            public string BundleName => ShopBundles.For(Category);
+
+            public bool HasContent => AssetDatabase.IsValidFolder(Folder) &&
+                                      AssetDatabase.FindAssets(Filter, new[] { Folder }).Length > 0;
+
+            // Devuelve los nombres con los que se piden los assets (el nombre del archivo sin extensión).
+            public HashSet<string> FindAssetNames(out AssetBundleBuild build)
+            {
+                var names = new HashSet<string>();
+                var assetPaths = new List<string>();
+                var addressableNames = new List<string>();
+
+                if (AssetDatabase.IsValidFolder(Folder))
+                {
+                    foreach (string guid in AssetDatabase.FindAssets(Filter, new[] { Folder }))
+                    {
+                        string path = AssetDatabase.GUIDToAssetPath(guid);
+                        string assetName = Path.GetFileNameWithoutExtension(path);
+
+                        if (!names.Add(assetName))
+                        {
+                            throw new BuildFailedException($"Hay dos assets llamados '{assetName}' en {Folder}; el bundle '{BundleName}' los pide por nombre.");
+                        }
+
+                        assetPaths.Add(path);
+                        addressableNames.Add(assetName);
+                    }
+                }
+
+                build = new AssetBundleBuild
+                {
+                    assetBundleName = BundleName,
+                    assetNames = assetPaths.ToArray(),
+                    addressableNames = addressableNames.ToArray()
+                };
+
+                return names;
+            }
+        }
     }
 
-    // Si se da Play sin haber armado el bundle del Editor, lo arma antes de entrar.
+    // Si se da Play sin haber armado alguno de los bundles del Editor, los arma antes de entrar.
     [InitializeOnLoad]
     internal static class GunBundlePlayModeCheck
     {
@@ -154,12 +229,12 @@ namespace GunJump.EditorTools
 
         private static void OnPlayModeChanged(PlayModeStateChange change)
         {
-            if (change != PlayModeStateChange.ExitingEditMode || File.Exists(GunModelBundle.BundlePath))
+            if (change != PlayModeStateChange.ExitingEditMode || !IsAnyBundleMissing())
             {
                 return;
             }
 
-            Debug.Log("No existe el AssetBundle de armas para el Editor; armándolo antes de entrar a Play.");
+            Debug.Log("Falta algún AssetBundle del arma para el Editor; armándolos antes de entrar a Play.");
 
             try
             {
@@ -167,9 +242,22 @@ namespace GunJump.EditorTools
             }
             catch (BuildFailedException e)
             {
-                Debug.LogError($"{e.Message} La tienda no va a mostrar el arma en esta sesión de Play. " +
+                Debug.LogError($"{e.Message} La tienda y el arma no van a mostrar su contenido en esta sesión de Play. " +
                                "(Si el motivo no está en este mensaje, está más arriba en la consola.)");
             }
+        }
+
+        private static bool IsAnyBundleMissing()
+        {
+            foreach (GunBundleBuilder.BundleSource source in GunBundleBuilder.Sources)
+            {
+                if (source.HasContent && !File.Exists(ContentBundle.PathOf(source.BundleName)))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

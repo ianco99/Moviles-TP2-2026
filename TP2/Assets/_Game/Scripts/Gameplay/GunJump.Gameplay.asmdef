@@ -3,6 +3,7 @@
     "rootNamespace": "GunJump.Gameplay",
     "references": [
         "GunJump.Core",
+        "GunJump.Economy",
         "GunJump.UI",
         "Unity.InputSystem",
         "UnityEngine.UI"

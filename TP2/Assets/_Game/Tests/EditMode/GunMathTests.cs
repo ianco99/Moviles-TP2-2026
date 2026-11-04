@@ -106,5 +106,49 @@ namespace GunJump.Tests
             Assert.AreEqual(0f, GunMath.DampSpin(3f, 6f, 1f), Tolerance);
             Assert.AreEqual(-4f, GunMath.DampSpin(-10f, 6f, 1f), Tolerance);
         }
+
+        [Test]
+        public void FitToLength_ScalesToTheLengthOnX()
+        {
+            var bounds = new Bounds(Vector3.zero, new Vector3(4f, 1f, 0.5f));
+
+            GunMath.FitToLength(bounds, 1f, out float scale, out _);
+
+            Assert.AreEqual(0.25f, scale, Tolerance);
+        }
+
+        [Test]
+        public void FitToLength_CentersTheScaledModel()
+        {
+            var bounds = new Bounds(new Vector3(2f, -1f, 0.5f), new Vector3(2f, 1f, 1f));
+
+            GunMath.FitToLength(bounds, 1f, out float scale, out Vector3 position);
+            Vector3 fittedCenter = bounds.center * scale + position;
+
+            Assert.AreEqual(0f, fittedCenter.x, Tolerance);
+            Assert.AreEqual(0f, fittedCenter.y, Tolerance);
+            Assert.AreEqual(0f, fittedCenter.z, Tolerance);
+        }
+
+        [Test]
+        public void FitToLength_WithoutLengthOnX_KeepsTheScale()
+        {
+            var bounds = new Bounds(Vector3.one, new Vector3(0f, 1f, 1f));
+
+            GunMath.FitToLength(bounds, 1f, out float scale, out Vector3 position);
+
+            Assert.AreEqual(1f, scale, Tolerance);
+            Assert.AreEqual(-1f, position.x, Tolerance);
+        }
+
+        [Test]
+        public void UndoParentScale_CancelsTheParentScale()
+        {
+            Vector3 result = GunMath.UndoParentScale(Vector3.one, new Vector3(0.35f, 0.1f, 0.1f));
+
+            Assert.AreEqual(1f / 0.35f, result.x, Tolerance);
+            Assert.AreEqual(10f, result.y, Tolerance);
+            Assert.AreEqual(10f, result.z, Tolerance);
+        }
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using _Game.Scripts.Economy;
+using GunJump.Core;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -34,7 +35,7 @@ namespace _Game.Scripts.Shop
         [SerializeField] private Vector3 modelRotation;
         [SerializeField] private int antiAliasing = 4;
 
-        private readonly GunModelBundle bundle = new GunModelBundle();
+        private ContentBundle bundle;
 
         private EventBus eventBus;
         private PlayerEquipment equipment;
@@ -55,6 +56,9 @@ namespace _Game.Scripts.Shop
 
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
         private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
+
+        // El mismo bundle que usa el arma en los niveles: Unity no deja abrir dos veces el mismo.
+        private ContentBundle Bundle => bundle ??= ServiceProvider.Instance.GetService<ContentLibrary>().Get(ShopBundles.Guns);
 
         private void Awake()
         {
@@ -141,7 +145,7 @@ namespace _Game.Scripts.Shop
 
         private void OnEquippedChanged(in EquippedItemChangedEvent e)
         {
-            if (isOpen && bundle.IsLoaded)
+            if (isOpen && Bundle.IsLoaded)
             {
                 ShowEquipped();
             }
@@ -149,9 +153,9 @@ namespace _Game.Scripts.Shop
 
         private IEnumerator OpenRoutine()
         {
-            yield return bundle.LoadBundle();
+            yield return Bundle.LoadBundle();
 
-            if (isOpen && bundle.IsLoaded)
+            if (isOpen && Bundle.IsLoaded)
             {
                 ShowEquipped();
             }
@@ -160,11 +164,11 @@ namespace _Game.Scripts.Shop
         private void ShowEquipped()
         {
             ShopItem gun = Equipment.GetEquipped(ShopCategory.Guns);
-            string modelName = gun != null ? gun.ModelName : null;
+            string modelName = gun != null ? gun.AssetName : null;
 
             if (string.IsNullOrEmpty(modelName))
             {
-                Debug.LogWarning($"El arma equipada ({(gun != null ? gun.name : "ninguna")}) no tiene Model Name; no hay nada que mostrar.");
+                Debug.LogWarning($"El arma equipada ({(gun != null ? gun.name : "ninguna")}) no tiene Asset Name; no hay nada que mostrar.");
                 ClearInstance();
                 return;
             }
@@ -181,7 +185,7 @@ namespace _Game.Scripts.Shop
         private IEnumerator SwapRoutine(string modelName, int id)
         {
             GameObject prefab = null;
-            yield return bundle.LoadModel(modelName, loaded => prefab = loaded);
+            yield return Bundle.LoadAsset<GameObject>(modelName, loaded => prefab = loaded);
 
             // Si mientras cargaba se pidió otra arma o se cerró la tienda, este resultado ya no sirve.
             if (id != requestId || !isOpen)
@@ -284,9 +288,10 @@ namespace _Game.Scripts.Shop
             requestId++;
             StopAllCoroutines();
 
-            // Las instancias se destruyen antes de descargar el bundle del que salieron.
+            // Las instancias se destruyen antes de descargar el bundle del que salieron. Con la tienda cerrada
+            // el menú no lo usa; el arma lo vuelve a cargar una sola vez al entrar al nivel.
             ClearInstance();
-            bundle.Unload();
+            bundle?.Unload();
 
             // Al descargar la escena, la cámara o el RawImage pueden haberse destruido antes que este componente.
             if (previewCamera != null)

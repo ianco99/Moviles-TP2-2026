@@ -38,5 +38,23 @@ namespace GunJump.Gameplay
         {
             return Mathf.MoveTowards(spin, 0f, damping * deltaTime);
         }
+
+        // Escala y posición que dejan un modelo con estos límites (medidos con el modelo en el origen y escala 1)
+        // midiendo length sobre X y centrado en el origen. Sin largo sobre X no hay qué escalar.
+        public static void FitToLength(Bounds bounds, float length, out float scale, out Vector3 position)
+        {
+            float size = bounds.size.x;
+            scale = size > 0f ? length / size : 1f;
+            position = -bounds.center * scale;
+        }
+
+        // Escala local que hace que un hijo se vea a su tamaño propio debajo de un padre escalado.
+        public static Vector3 UndoParentScale(Vector3 childScale, Vector3 parentScale)
+        {
+            return new Vector3(
+                parentScale.x != 0f ? childScale.x / parentScale.x : childScale.x,
+                parentScale.y != 0f ? childScale.y / parentScale.y : childScale.y,
+                parentScale.z != 0f ? childScale.z / parentScale.z : childScale.z);
+        }
     }
 }

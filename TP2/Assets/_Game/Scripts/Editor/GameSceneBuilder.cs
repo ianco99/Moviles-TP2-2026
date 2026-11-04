@@ -55,6 +55,11 @@ namespace GunJump.EditorTools
         static readonly Color SkyColor = new Color(0.62f, 0.8f, 0.92f);
         static readonly Color LoadingColor = new Color(0.1f, 0.12f, 0.18f);
 
+        // La pantalla de carga entra encima del menú: tiene que dibujarse por arriba de su canvas.
+        const int LoadingSortingOrder = 100;
+
+        // Ojo: este menú y "Boot and Loading Scenes" reordenan Build Settings y sacan Prototype (ver UpdateBuildSettings).
+        // Mientras LevelListSO apunte a índices de build del flujo MainMenu → Prototype, usá "Loading Scene".
         [MenuItem("GunJump/Build/All (first time)")]
         public static void BuildAll()
         {
@@ -97,6 +102,22 @@ namespace GunJump.EditorTools
             UpdateBuildSettings();
             AssetDatabase.SaveAssets();
             Reopen(previous);
+        }
+
+        // Solo la pantalla de carga que usa LevelLoader. La agrega al final de Build Settings sin mover
+        // las demás, así los índices de build que guarda LevelListSO siguen valiendo.
+        [MenuItem("GunJump/Build/Loading Scene")]
+        public static void BuildLoadingOnly()
+        {
+            if (!CanBuild(LoadingScenePath))
+                return;
+
+            string previous = SceneManager.GetActiveScene().path;
+            BuildLoadingScene();
+            AppendToBuildSettings(LoadingScenePath);
+            AssetDatabase.SaveAssets();
+            Reopen(previous);
+            Debug.Log($"GunJump: escena {LoadingScenePath} creada y agregada al final de Build Settings.");
         }
 
         [MenuItem("GunJump/Build/Level 1 Scene")]
@@ -431,6 +452,7 @@ namespace GunJump.EditorTools
             camera.cullingMask = 0;
 
             GameObject canvas = UiFactory.CreateCanvas("UI", null);
+            canvas.GetComponent<Canvas>().sortingOrder = LoadingSortingOrder;
             var view = canvas.AddComponent<LoadingView>();
 
             Image background = UiFactory.CreateImage("Background", canvas.transform, LoadingColor, true);
@@ -633,6 +655,20 @@ namespace GunJump.EditorTools
 
                 scenes.Add(existing);
             }
+
+            EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        // Agrega la escena al final si no estaba (y la activa si estaba desactivada), sin mover las demás.
+        static void AppendToBuildSettings(string path)
+        {
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            int index = scenes.FindIndex(scene => scene.path == path);
+
+            if (index >= 0)
+                scenes[index] = new EditorBuildSettingsScene(path, true);
+            else
+                scenes.Add(new EditorBuildSettingsScene(path, true));
 
             EditorBuildSettings.scenes = scenes.ToArray();
         }

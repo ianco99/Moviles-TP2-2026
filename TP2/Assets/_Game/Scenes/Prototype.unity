@@ -329,6 +329,8 @@ MonoBehaviour:
   muzzle: {fileID: 1783115840}
   fireStrategy: {fileID: 11400000, guid: f707da81e83d6b045b3fdae1e6d24e3d, type: 2}
   bulletSpawner: {fileID: 1251647521}
+  modelRotation: {x: 0, y: -90, z: 0}
+  modelLength: 1
 --- !u!65 &83280537
 BoxCollider:
   m_ObjectHideFlags: 0

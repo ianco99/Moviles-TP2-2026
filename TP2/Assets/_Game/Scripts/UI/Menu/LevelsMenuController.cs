@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using GunJump.Core;
+using ianco99.ToolBox.Services;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -13,7 +14,9 @@ namespace GunJump.UI
         [SerializeField] private GridLayoutGroup gridLayoutGroup;
         [SerializeField] private Button levelButton;
 
-        private bool isLoading;
+        private LevelLoader levelLoader;
+
+        private LevelLoader LevelLoader => levelLoader ??= ServiceProvider.Instance.GetService<LevelLoader>();
 
         //TODO: Optimize with asset batching/asset
         public void Setup()
@@ -39,16 +42,10 @@ namespace GunJump.UI
             }
         }
 
-        // Todas las cargas de nivel pasan por acá. Después va la carga asíncrona con pantalla de transición.
+        // LevelLoader ignora los toques mientras ya hay una carga en curso.
         private void LoadLevel(int buildIndex)
         {
-            if (isLoading)
-            {
-                return;
-            }
-
-            isLoading = true;
-            SceneManager.LoadScene(buildIndex);
+            LevelLoader.Load(buildIndex);
         }
 
         private static bool IsInBuildSettings(int buildIndex)

@@ -1,6 +1,7 @@
 using System;
 using _Game.Scripts.Economy;
 using _Game.Scripts.Shop;
+using GunJump.Core;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -15,6 +16,8 @@ namespace _Game.Scripts.Bootstrap
         [Tooltip("Monedas con las que arranca una partida nueva. Solo se dan si todavía no hay billetera guardada.")]
         [SerializeField] private double startingMoney;
         [SerializeField] private ShopCatalog catalog;
+        [Tooltip("Escena de la pantalla de carga entre el menú y los niveles. Tiene que estar en Build Settings.")]
+        [SerializeField] private string loadingScene = "Loading";
 
         private void Awake()
         {
@@ -23,6 +26,16 @@ namespace _Game.Scripts.Bootstrap
             if (!services.ContainsService<EventBus>())
             {
                 services.AddService<EventBus>(new EventBus());
+            }
+
+            if (!services.ContainsService<LevelLoader>())
+            {
+                services.AddService<LevelLoader>(new LevelLoader(services.GetService<EventBus>(), loadingScene));
+            }
+
+            if (!services.ContainsService<ContentLibrary>())
+            {
+                services.AddService<ContentLibrary>(new ContentLibrary());
             }
 
             // Los servicios de la economía viven toda la sesión: se crean y se cargan del guardado una sola vez.

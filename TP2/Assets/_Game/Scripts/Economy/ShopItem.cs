@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace _Game.Scripts.Shop
 {
@@ -17,14 +18,17 @@ namespace _Game.Scripts.Shop
         [SerializeField] private ShopCategory category;
         [SerializeField] private int price;
 
-        [Tooltip("Solo armas: nombre del modelo dentro del AssetBundle 'guns' (el nombre del .fbx sin extensión, p. ej. blaster-a).")]
-        [SerializeField] private string modelName;
+        [Tooltip("Nombre del asset dentro del AssetBundle de su categoría, sin extensión: el modelo del arma (p. ej. blaster-a), " +
+                 "el material de la skin, o el prefab de la bala o del efecto de disparo. Vacío = se usa lo que el arma trae por defecto.")]
+        [FormerlySerializedAs("modelName")]
+        [SerializeField] private string assetName;
 
         // Identificador estable para guardar: el nombre del asset.
         public string Id => name;
         public Sprite Sprite => sprite;
         public ShopCategory Category => category;
         public int Price => price;
-        public string ModelName => modelName;
+        public string AssetName => assetName;
+        public string BundleName => ShopBundles.For(category);
     }
 }
