@@ -7,7 +7,8 @@ using UnityEngine.UI;
 
 namespace _Game.Scripts.Shop
 {
-    // Muestra el arma equipada girando en el centro de la tienda. Una cámara propia la renderiza a una
+    // Muestra el arma equipada en el centro de la tienda, dando vueltas sobre su eje X (de punta,
+    // hacia la cámara) mientras flota subiendo y bajando. Una cámara propia la renderiza a una
     // RenderTexture que se ve en un RawImage. Tiene que estar fuera del panel de la tienda para seguir
     // escuchando eventos aunque el panel se desactive.
     public class GunPreviewController : MonoBehaviour
@@ -15,14 +16,20 @@ namespace _Game.Scripts.Shop
         [Header("References")]
         [SerializeField] private RawImage target;
         [SerializeField] private Camera previewCamera;
-        [Tooltip("Pivote que gira; el modelo se instancia como hijo, centrado en él.")]
+        [Tooltip("Pivote que gira sobre su eje X y flota; el modelo se instancia como hijo, centrado en él.")]
         [SerializeField] private Transform spinner;
 
         [Header("Presentation")]
-        [Tooltip("Grados por segundo alrededor del eje vertical.")]
-        [SerializeField] private float rotationSpeed = 60f;
-        [Tooltip("Tamaño en unidades del lado más largo del modelo, para que todas las armas ocupen lo mismo.")]
-        [SerializeField] private float fitSize = 1f;
+        [Tooltip("Grados por segundo alrededor del eje X del pivote. Negativo invierte el sentido.")]
+        [SerializeField] private float spinSpeed = 180f;
+        [Tooltip("Grados que se gira el eje de giro alrededor del vertical. 0 = vuelta pura hacia la cámara; 90 = vuelta en el plano de la pantalla, como en el juego.")]
+        [SerializeField] private float spinAxisYaw = 30f;
+        [Tooltip("Unidades que el arma sube y baja mientras flota.")]
+        [SerializeField] private float floatHeight = 0.05f;
+        [Tooltip("Segundos de cada ciclo de subida y bajada.")]
+        [SerializeField] private float floatPeriod = 2.5f;
+        [Tooltip("Diámetro en unidades del círculo que barre el arma al girar, para que todas ocupen lo mismo.")]
+        [SerializeField] private float spinSize = 0.9f;
         [Tooltip("Rotación local del modelo dentro del pivote, por si los modelos no miran hacia donde queremos.")]
         [SerializeField] private Vector3 modelRotation;
         [SerializeField] private int antiAliasing = 4;
@@ -41,6 +48,11 @@ namespace _Game.Scripts.Shop
         private int requestId;
         private bool isOpen;
 
+        private Vector3 restPosition;
+        private Quaternion restRotation;
+        private float spinAngle;
+        private float floatTime;
+
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
         private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
 
@@ -53,6 +65,9 @@ namespace _Game.Scripts.Shop
             EventBus.Subscribe(openedCallback);
             EventBus.Subscribe(closedCallback);
             EventBus.Subscribe(changedCallback);
+
+            restPosition = spinner.localPosition;
+            restRotation = spinner.localRotation;
 
             previewCamera.enabled = false;
             target.enabled = false;
@@ -74,10 +89,35 @@ namespace _Game.Scripts.Shop
 
         private void Update()
         {
-            if (instance != null)
+            if (instance == null)
             {
-                spinner.Rotate(0f, rotationSpeed * Time.deltaTime, 0f, Space.World);
+                return;
             }
+
+            float deltaTime = Time.deltaTime;
+            spinAngle = Mathf.Repeat(spinAngle + spinSpeed * deltaTime, 360f);
+
+            float bob = 0f;
+
+            if (floatPeriod > 0f)
+            {
+                floatTime = Mathf.Repeat(floatTime + deltaTime, floatPeriod);
+                bob = Mathf.Sin(floatTime / floatPeriod * 2f * Mathf.PI) * floatHeight;
+            }
+
+            // Primero gira sobre su propio eje X y después el yaw inclina ese eje respecto de la cámara.
+            spinner.localPosition = restPosition + Vector3.up * bob;
+            spinner.localRotation = restRotation
+                                    * Quaternion.Euler(0f, spinAxisYaw, 0f)
+                                    * Quaternion.AngleAxis(spinAngle, Vector3.right);
+        }
+
+        private void ResetPose()
+        {
+            spinAngle = 0f;
+            floatTime = 0f;
+            spinner.localPosition = restPosition;
+            spinner.localRotation = restRotation;
         }
 
         private void OnShopOpened(in ShopOpenedEvent e)
@@ -88,6 +128,7 @@ namespace _Game.Scripts.Shop
             }
 
             isOpen = true;
+            ResetPose();
             CreateRenderTexture();
             previewCamera.enabled = true;
             StartCoroutine(OpenRoutine());
@@ -161,7 +202,7 @@ namespace _Game.Scripts.Shop
             target.enabled = true;
         }
 
-        // Centra el modelo en el pivote y lo escala para que su lado más largo mida fitSize.
+        // Centra el modelo en el pivote y lo escala para que el círculo que barre al girar sobre X mida spinSize.
         private void FitToSpinner(Transform model)
         {
             Quaternion spin = spinner.rotation;
@@ -182,8 +223,12 @@ namespace _Game.Scripts.Shop
                     bounds.Encapsulate(renderers[i].bounds);
                 }
 
-                float largest = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
-                float scale = largest > 0f ? fitSize / largest : 1f;
+                // Al girar sobre X, el punto más lejano del eje está como mucho en la diagonal de Y y Z.
+                // El largo sobre X cuenta por si modelRotation deja el lado largo sobre el eje.
+                Vector3 size = bounds.size;
+                float sweep = Mathf.Sqrt(size.y * size.y + size.z * size.z);
+                float span = Mathf.Max(size.x, sweep);
+                float scale = span > 0f ? spinSize / span : 1f;
                 Vector3 localCenter = spinner.InverseTransformPoint(bounds.center);
 
                 model.localScale = Vector3.one * scale;
