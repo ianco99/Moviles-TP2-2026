@@ -10,10 +10,23 @@ namespace GunJump.EditorTools
 {
     // Arma los AssetBundles del arma, uno por categoría de la tienda (ver Sources).
     // - Para Play mode: GunJump > Asset Bundles > Build Gun Bundles (Editor), o solo, al dar Play si falta alguno.
-    // - Para el build: se arman solos antes de cada build del jugador y se copian a StreamingAssets,
-    //   así que nunca hay que commitearlos ni se puede subir uno viejo.
+    // - Para el build: el botón Build (o Build And Run) los arma ANTES de empezar el build del jugador,
+    //   y PrepareForBuild solo los copia a StreamingAssets. Así nunca hay que commitearlos ni se puede subir uno viejo.
+    //
+    // No se pueden armar adentro de PrepareForBuild: BuildPipeline.BuildAssetBundles abre y cierra su propio
+    // BuildReport en medio del build del jugador, y el Editor se cae apenas el build sigue
+    // (crash nativo en BuildReport::BeginBuildStep / AddMessage, Unity 6000.3).
+    [InitializeOnLoad]
     public sealed class GunBundleBuilder : BuildPlayerProcessor
     {
+        // Carpeta armada por BuildBundlesThenPlayer para el build en curso; PrepareForBuild la consume.
+        private static string s_preparedOutput;
+
+        static GunBundleBuilder()
+        {
+            BuildPlayerWindow.RegisterBuildPlayerHandler(BuildBundlesThenPlayer);
+        }
+
         // De dónde sale cada bundle. Solo los modelos de armas son obligatorios: una categoría
         // sin contenido no arma bundle y sus items usan lo que el arma trae por defecto.
         internal static readonly BundleSource[] Sources =
@@ -26,11 +39,39 @@ namespace GunJump.EditorTools
 
         public override int callbackOrder => 0;
 
+        // Reemplaza lo que hace el botón Build de File > Build Profiles: primero los bundles, después el jugador.
+        // Son dos builds seguidos, no uno adentro del otro.
+        private static void BuildBundlesThenPlayer(BuildPlayerOptions options)
+        {
+            try
+            {
+                s_preparedOutput = Build(options.target, ContentBundle.PlayerPlatformFolder);
+            }
+            catch (BuildFailedException e)
+            {
+                throw new BuildPlayerWindow.BuildMethodException(e.Message);
+            }
+
+            try
+            {
+                BuildPlayerWindow.DefaultBuildMethods.BuildPlayer(options);
+            }
+            finally
+            {
+                s_preparedOutput = null;
+            }
+        }
+
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
-            BuildTarget target = buildPlayerContext.BuildPlayerOptions.target;
-            string output = Build(target, target.ToString());
-            buildPlayerContext.AddAdditionalPathToStreamingAssets(output, ContentBundle.StreamingFolder);
+            if (s_preparedOutput == null)
+            {
+                throw new BuildFailedException(
+                    "Los AssetBundles del arma no se armaron para este build. Armá el jugador con el botón Build " +
+                    "de File > Build Profiles (no se pueden armar adentro del build: hacen caer al Editor).");
+            }
+
+            buildPlayerContext.AddAdditionalPathToStreamingAssets(s_preparedOutput, ContentBundle.StreamingFolder);
         }
 
         [MenuItem("GunJump/Asset Bundles/Build Gun Bundles (Editor)")]
@@ -249,6 +290,12 @@ namespace GunJump.EditorTools
 
         private static bool IsAnyBundleMissing()
         {
+            // Sin el manifest, ContentLibrary no sabe qué bundles cargar antes de cada uno.
+            if (!File.Exists(ContentBundle.PathOf(ContentBundle.ManifestBundleName)))
+            {
+                return true;
+            }
+
             foreach (GunBundleBuilder.BundleSource source in GunBundleBuilder.Sources)
             {
                 if (source.HasContent && !File.Exists(ContentBundle.PathOf(source.BundleName)))

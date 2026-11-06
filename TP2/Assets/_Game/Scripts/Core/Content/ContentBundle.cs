@@ -16,16 +16,22 @@ namespace GunJump.Core
         public const string OutputRoot = "AssetBundles";
         public const string EditorPlatformFolder = "Editor";
 
+        // Subcarpeta de OutputRoot donde GunBundleBuilder arma los bundles del build del jugador (solo Android).
+        public const string PlayerPlatformFolder = "Android";
+
         // Carpeta dentro de StreamingAssets donde el build copia los bundles.
         public const string StreamingFolder = "AssetBundles";
 
         readonly Dictionary<string, Object> assets = new Dictionary<string, Object>();
+        // Todas las dependencias, directas e indirectas (ver ContentLibrary).
+        readonly ContentBundle[] dependencies;
         AssetBundle bundle;
         AssetBundleCreateRequest pendingLoad;
 
-        public ContentBundle(string bundleName)
+        public ContentBundle(string bundleName, ContentBundle[] dependencies)
         {
             Name = bundleName;
+            this.dependencies = dependencies;
         }
 
         public string Name { get; }
@@ -44,12 +50,35 @@ namespace GunJump.Core
             }
         }
 
+        // BuildAssetBundles deja el AssetBundleManifest en un bundle que se llama como la carpeta donde armó.
+        public static string ManifestBundleName
+        {
+            get
+            {
+#if UNITY_EDITOR
+                return EditorPlatformFolder;
+#else
+                return PlayerPlatformFolder;
+#endif
+            }
+        }
+
         public static string PathOf(string bundleName)
         {
             return Path.Combine(Folder, bundleName);
         }
 
+        // Carga primero los bundles de los que depende: si no, lo que este bundle use de ellos
+        // (por ejemplo, el material de un modelo) sale vacío y no se arregla al cargarlos después.
         public IEnumerator LoadBundle()
+        {
+            for (int i = 0; i < dependencies.Length; i++)
+                yield return dependencies[i].LoadOwnFile();
+
+            yield return LoadOwnFile();
+        }
+
+        IEnumerator LoadOwnFile()
         {
             if (bundle != null)
                 yield break;
