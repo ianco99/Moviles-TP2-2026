@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using _Game.Scripts.Economy;
+using GunJump.Core;
 using GunJump.UI;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
@@ -56,6 +57,7 @@ namespace _Game.Scripts.Shop
         public void SelectCategory(int category)
         {
             currentCategory = (ShopCategory)category;
+            GameAudio.Play(SoundId.ShopTab);
             ShowCategory();
         }
 
@@ -93,19 +95,23 @@ namespace _Game.Scripts.Shop
         private void OnItemClicked(ShopItemView view)
         {
             ShopItem item = view.Item;
+            bool bought = false;
 
             if (!Inventory.Owns(item))
             {
                 if (!Wallet.SpendMoney(item.Price))
                 {
                     Debug.LogWarning($"Not enough money to buy {item.name} ({item.Price})");
+                    GameAudio.Play(SoundId.ShopDenied);
                     return;
                 }
 
                 Inventory.Add(item);
                 EventBus.Raise<ShowMoneyCountEvent>();
+                bought = true;
             }
 
+            GameAudio.Play(bought ? SoundId.ShopBuy : SoundId.ShopEquip);
             Equipment.Equip(item);
             RefreshStates();
             EventBus.Raise<EquippedItemChangedEvent>();

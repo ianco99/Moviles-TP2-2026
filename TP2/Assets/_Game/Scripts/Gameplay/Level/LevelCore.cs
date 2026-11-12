@@ -114,6 +114,7 @@ namespace GunJump.Gameplay
         {
             finished = true;
             bool won = session.State == LevelState.Won;
+            GameAudio.Play(won ? SoundId.LevelWin : SoundId.LevelLose);
             int stars = 0;
             int reward = 0;
 

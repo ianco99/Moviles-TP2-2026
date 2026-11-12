@@ -68,6 +68,8 @@ namespace GunJump.UI
         private IEnumerator WaitForAnim(string key)
         {
             picked = true;
+            // Suena en el toque, no después de la espera de la animación.
+            GameAudio.Play(SoundId.ButtonClick);
             yield return new WaitForSeconds(0.1f);
             ActivateKey(key);
             picked = false;

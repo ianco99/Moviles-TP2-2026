@@ -18,6 +18,8 @@ namespace _Game.Scripts.Bootstrap
         [SerializeField] private ShopCatalog catalog;
         [Tooltip("Escena de la pantalla de carga entre el menú y los niveles. Tiene que estar en Build Settings.")]
         [SerializeField] private string loadingScene = "Loading";
+        [Tooltip("Clips y volúmenes del juego. Se crea y se asigna con GunJump > Audio > Setup Audio.")]
+        [SerializeField] private AudioLibrary audioLibrary;
 
         private void Awake()
         {
@@ -31,6 +33,18 @@ namespace _Game.Scripts.Bootstrap
             if (!services.ContainsService<LevelLoader>())
             {
                 services.AddService<LevelLoader>(new LevelLoader(services.GetService<EventBus>(), loadingScene));
+            }
+
+            if (!services.ContainsService<AudioService>())
+            {
+                if (audioLibrary != null)
+                {
+                    services.AddService<AudioService>(new AudioService(services.GetService<EventBus>(), audioLibrary));
+                }
+                else
+                {
+                    Debug.LogWarning("Bootstrapper: falta asignar el AudioLibrary; el juego corre sin sonido. Corré GunJump > Audio > Setup Audio.", this);
+                }
             }
 
             if (!services.ContainsService<ContentLibrary>())

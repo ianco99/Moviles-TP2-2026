@@ -45,6 +45,7 @@ namespace GunJump.UI
         // LevelLoader ignora los toques mientras ya hay una carga en curso.
         private void LoadLevel(int buildIndex)
         {
+            GameAudio.Play(SoundId.ButtonClick);
             LevelLoader.Load(buildIndex);
         }
 

@@ -27,6 +27,7 @@ namespace GunJump.Gameplay
                 return;
 
             restarting = true;
+            GameAudio.Play(SoundId.LevelLose);
 
             // Entrando desde el menú, LevelLoader recarga sin pantalla de carga y muestra el nivel con el arma ya equipada.
             // Dando Play directo en Prototype no hay servicios: se recarga a secas y el arma queda por defecto.

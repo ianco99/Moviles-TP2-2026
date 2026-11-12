@@ -1,3 +1,4 @@
+using GunJump.Core;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -33,9 +34,13 @@ namespace GunJump.Gameplay
             OnHit(hit);
 
             if (health > 0)
+            {
+                GameAudio.Play(SoundId.EnemyHit);
                 return;
+            }
 
             IsDead = true;
+            GameAudio.Play(SoundId.EnemyDeath);
             session?.RegisterKill(config.CoinReward);
             OnDeath(hit);
         }

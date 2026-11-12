@@ -1,3 +1,4 @@
+using GunJump.Core;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -27,6 +28,7 @@ namespace GunJump.Gameplay
 
             hitOnce = true;
             session.RegisterMultiplier(multiplier);
+            GameAudio.Play(SoundId.MultiplierHit);
             visual.SetActive(false);
         }
     }

@@ -24,6 +24,8 @@ namespace GunJump.UI
 
         void Click()
         {
+            GameAudio.Play(SoundId.ButtonClick);
+
             if (command != null)
                 invoker.Execute(command, Time.unscaledTime);
         }

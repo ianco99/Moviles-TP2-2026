@@ -1,4 +1,5 @@
 using System;
+using GunJump.Core;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -60,6 +61,8 @@ namespace GunJump.Gameplay
                 IBulletTarget target = hit.collider.GetComponentInParent<IBulletTarget>();
                 if (target != null)
                     target.TakeHit(new HitInfo(config.Damage, hit.point, direction));
+                else
+                    GameAudio.Play(SoundId.BulletImpact);
 
                 release(this);
                 return;

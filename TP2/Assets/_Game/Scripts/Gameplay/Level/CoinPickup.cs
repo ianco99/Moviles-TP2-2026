@@ -1,3 +1,4 @@
+using GunJump.Core;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -21,6 +22,7 @@ namespace GunJump.Gameplay
                 return;
 
             session.AddCoins(value);
+            GameAudio.Play(SoundId.CoinPickup);
             gameObject.SetActive(false);
         }
     }

@@ -26,6 +26,17 @@ namespace GunJump.Gameplay
         [Tooltip("Segundos mínimos entre dos disparos.")]
         [SerializeField] float fireInterval = 0.12f;
 
+        [Header("Sonido de golpe")]
+        [Tooltip("Velocidad mínima del choque, en unidades por segundo, para que el arma suene al golpear. Por debajo no suena: apoyarse o rodar despacio es silencioso.")]
+        [SerializeField] float impactSoundMinSpeed = 1.5f;
+        [Tooltip("Velocidad del choque a la que el golpe suena a volumen completo.")]
+        [SerializeField] float impactSoundMaxSpeed = 10f;
+        [Tooltip("Volumen del golpe más suave que llega a sonar, como fracción del volumen completo.")]
+        [Range(0f, 1f)]
+        [SerializeField] float impactSoundMinVolume = 0.35f;
+        [Tooltip("Segundos mínimos entre dos sonidos de golpe, para que un rebote corto no suene varias veces.")]
+        [SerializeField] float impactSoundInterval = 0.08f;
+
         public float RecoilSpin => recoilSpin;
         public float SpinDamping => spinDamping;
         public float RecoilCarryOver => recoilCarryOver;
@@ -33,5 +44,9 @@ namespace GunJump.Gameplay
         public float GroundLift => groundLift;
         public float GroundedGrace => groundedGrace;
         public float FireInterval => fireInterval;
+        public float ImpactSoundMinSpeed => impactSoundMinSpeed;
+        public float ImpactSoundMaxSpeed => impactSoundMaxSpeed;
+        public float ImpactSoundMinVolume => impactSoundMinVolume;
+        public float ImpactSoundInterval => impactSoundInterval;
     }
 }

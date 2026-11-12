@@ -17,6 +17,8 @@ namespace GunJump.Gameplay
         {
             if (session.CanFire && gun.TryFire())
                 session.ConsumeAmmo();
+            else if (session.IsPlaying && session.IsOutOfAmmo)
+                GameAudio.Play(SoundId.DryFire);
         }
     }
 }

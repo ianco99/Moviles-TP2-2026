@@ -845,7 +845,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 121.2921, y: 0}
+  m_AnchoredPosition: {x: 121.29199, y: 0}
   m_SizeDelta: {x: 202.5842, y: 219.13164}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!114 &427823791
@@ -4418,6 +4418,7 @@ MonoBehaviour:
   startingMoney: 5000
   catalog: {fileID: 11400000, guid: 467fcd2b70dcd71418857f628194aed2, type: 2}
   loadingScene: Loading
+  audioLibrary: {fileID: 11400000, guid: c5d7c2a35d694324dbbb10ff965eec76, type: 2}
 --- !u!1 &2118522633
 GameObject:
   m_ObjectHideFlags: 0

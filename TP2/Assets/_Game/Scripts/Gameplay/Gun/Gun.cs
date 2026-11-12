@@ -29,6 +29,7 @@ namespace GunJump.Gameplay
         IFireStrategy strategy;
         float nextFireTime;
         float lastContactTime = float.NegativeInfinity;
+        float nextImpactSoundTime;
 
         GunCustomization customization;
         EventBus eventBus;
@@ -79,6 +80,18 @@ namespace GunJump.Gameplay
             body.angularVelocity = angular;
         }
 
+        // Suena solo en el choque inicial y más fuerte cuanto más rápido venía.
+        void OnCollisionEnter(Collision collision)
+        {
+            float speed = collision.relativeVelocity.magnitude;
+            if (speed < tuning.ImpactSoundMinSpeed || Time.time < nextImpactSoundTime)
+                return;
+
+            nextImpactSoundTime = Time.time + tuning.ImpactSoundInterval;
+            float strength = Mathf.InverseLerp(tuning.ImpactSoundMinSpeed, tuning.ImpactSoundMaxSpeed, speed);
+            GameAudio.Play(SoundId.GunImpact, Mathf.Lerp(tuning.ImpactSoundMinVolume, 1f, strength));
+        }
+
         void OnCollisionStay(Collision collision)
         {
             lastContactTime = Time.time;
@@ -104,6 +117,7 @@ namespace GunJump.Gameplay
             bool wasGrounded = IsGrounded;
             strategy.Fire(this, bulletSpawner);
             customization.PlayShotEffect();
+            GameAudio.Play(SoundId.Shot);
 
             if (wasGrounded)
             {
