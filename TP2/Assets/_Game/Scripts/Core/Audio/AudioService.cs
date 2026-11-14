@@ -14,6 +14,10 @@ namespace GunJump.Core
         // Varias fuentes en ronda: el tono de un disparo no cambia el de los sonidos que siguen sonando.
         const int SfxSourceCount = 4;
 
+        // Lo que el jugador eligió queda guardado entre sesiones. Sin nada guardado, todo suena.
+        const string SfxEnabledKey = "Audio.Sfx";
+        const string MusicEnabledKey = "Audio.Music";
+
         readonly AudioLibrary library;
         readonly MonoBehaviour runner;
         readonly AudioListener listener;
@@ -26,6 +30,8 @@ namespace GunJump.Core
         AudioClip targetMusic;
         Coroutine musicFade;
         int nextSfxSource;
+        bool sfxEnabled;
+        bool musicEnabled;
 
         public AudioService(EventBus eventBus, AudioLibrary audioLibrary)
         {
@@ -46,6 +52,10 @@ namespace GunJump.Core
 
             sounds = BuildTable(audioLibrary);
 
+            sfxEnabled = ReadEnabled(SfxEnabledKey);
+            musicEnabled = ReadEnabled(MusicEnabledKey);
+            musicSource.mute = !musicEnabled;
+
             loadFinishedCallback = OnLevelLoadFinished;
             eventBus.Subscribe(loadFinishedCallback);
             SceneManager.sceneLoaded += OnSceneLoaded;
@@ -56,8 +66,37 @@ namespace GunJump.Core
 
         public bool IsPersistance => true;
 
+        public bool IsEnabled(AudioChannel channel)
+        {
+            return channel == AudioChannel.Music ? musicEnabled : sfxEnabled;
+        }
+
+        public void SetEnabled(AudioChannel channel, bool enabled)
+        {
+            if (channel == AudioChannel.Music)
+            {
+                musicEnabled = enabled;
+                // Silenciada sigue avanzando: al volver a prenderla no arranca de cero ni corta un fundido.
+                musicSource.mute = !enabled;
+                WriteEnabled(MusicEnabledKey, enabled);
+                return;
+            }
+
+            sfxEnabled = enabled;
+            if (!enabled)
+            {
+                foreach (AudioSource source in sfxSources)
+                    source.Stop();
+            }
+
+            WriteEnabled(SfxEnabledKey, enabled);
+        }
+
         public void Play(SoundId id, float volumeScale = 1f)
         {
+            if (!sfxEnabled)
+                return;
+
             int index = (int)id;
             if (index < 0 || index >= sounds.Length)
                 return;
@@ -71,6 +110,17 @@ namespace GunJump.Core
 
             source.pitch = 1f + Random.Range(-entry.pitchVariation, entry.pitchVariation);
             source.PlayOneShot(entry.clip, entry.volume * volumeScale);
+        }
+
+        static bool ReadEnabled(string key)
+        {
+            return PlayerPrefs.GetInt(key, 1) != 0;
+        }
+
+        static void WriteEnabled(string key, bool enabled)
+        {
+            PlayerPrefs.SetInt(key, enabled ? 1 : 0);
+            PlayerPrefs.Save();
         }
 
         static AudioSource AddSource(GameObject host)
