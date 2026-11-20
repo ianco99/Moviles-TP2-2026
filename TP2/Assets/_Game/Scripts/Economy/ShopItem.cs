@@ -23,7 +23,6 @@ namespace _Game.Scripts.Shop
         [FormerlySerializedAs("modelName")]
         [SerializeField] private string assetName;
 
-        // Identificador estable para guardar: el nombre del asset.
         public string Id => name;
         public Sprite Sprite => sprite;
         public ShopCategory Category => category;

@@ -1,7 +1,5 @@
 namespace GunJump.Core
 {
-    // Cada sonido del juego. AudioLibrary guarda el número de cada valor:
-    // los nuevos van al final y los existentes no se reordenan.
     public enum SoundId
     {
         ButtonClick = 0,

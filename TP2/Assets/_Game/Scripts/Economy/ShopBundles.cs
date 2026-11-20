@@ -2,27 +2,25 @@ using System;
 
 namespace _Game.Scripts.Shop
 {
-    // Cada categoría de la tienda tiene su propio AssetBundle; ShopItem.AssetName es el nombre del asset dentro de él.
-    // GunBundleBuilder arma los bundles con estos nombres y el juego los abre con ContentBundle.
     public static class ShopBundles
     {
-        public const string Guns = "guns";
-        public const string Skins = "skins";
-        public const string Bullets = "bullets";
-        public const string ShotVfx = "shotvfx";
+        public const string GUNS = "guns";
+        public const string SKINS = "skins";
+        public const string BULLETS = "bullets";
+        public const string SHOT_VFX = "shotvfx";
 
         public static string For(ShopCategory category)
         {
             switch (category)
             {
                 case ShopCategory.Guns:
-                    return Guns;
+                    return GUNS;
                 case ShopCategory.GunSkins:
-                    return Skins;
+                    return SKINS;
                 case ShopCategory.Bullets:
-                    return Bullets;
+                    return BULLETS;
                 case ShopCategory.ShotVFX:
-                    return ShotVfx;
+                    return SHOT_VFX;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(category), category, null);
             }

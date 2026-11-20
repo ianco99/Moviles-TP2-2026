@@ -8,28 +8,25 @@ using UnityEngine.SceneManagement;
 
 namespace GunJump.EditorTools
 {
-    // Deja el audio andando de una: genera sonidos provisorios por síntesis, arma el AudioLibrary
-    // y lo asigna al Bootstrapper del menú. Los clips reales se ponen después a mano en el AudioLibrary.
     public static class AudioSetupTools
     {
-        private const string AudioFolder = "Assets/_Game/Audio";
-        private const string DataFolder = "Assets/_Game/Data";
-        private const string LibraryFolder = DataFolder + "/Audio";
-        private const string LibraryPath = LibraryFolder + "/AudioLibrary.asset";
-        private const string MainMenuScenePath = "Assets/_Game/Scenes/MainMenu.unity";
-        private const string MainMenuSceneName = "MainMenu";
-        private const string MenuMusicFile = "music_menu";
-        private const string GameplayMusicFile = "music_gameplay";
+        private const string AUDIO_FOLDER = "Assets/_Game/Audio";
+        private const string DATA_FOLDER = "Assets/_Game/Data";
+        private const string LIBRARY_FOLDER = DATA_FOLDER + "/Audio";
+        private const string LIBRARY_PATH = LIBRARY_FOLDER + "/AudioLibrary.asset";
+        private const string MAIN_MENU_SCENE_PATH = "Assets/_Game/Scenes/MainMenu.unity";
+        private const string MAIN_MENU_SCENE_NAME = "MainMenu";
+        private const string MENU_MUSIC_FILE = "music_menu";
+        private const string GAMEPLAY_MUSIC_FILE = "music_gameplay";
 
-        // El Bootstrapper compila en Assembly-CSharp, que este assembly no puede referenciar: se lo busca por nombre.
-        private const string BootstrapperTypeName = "Bootstrapper";
-        private const string BootstrapperLibraryField = "audioLibrary";
+        private const string BOOTSTRAPPER_TYPE_NAME = "Bootstrapper";
+        private const string BOOTSTRAPPER_LIBRARY_FIELD = "audioLibrary";
 
-        private const int SampleRate = 44100;
-        private const float AttackSeconds = 0.003f;
-        private const float ReleaseSeconds = 0.01f;
-        private const float PeakLevel = 0.85f;
-        private const int NoiseSeed = 1234;
+        private const int SAMPLE_RATE = 44100;
+        private const float ATTACK_SECONDS = 0.003f;
+        private const float RELEASE_SECONDS = 0.01f;
+        private const float PEAK_LEVEL = 0.85f;
+        private const int NOISE_SEED = 1234;
 
         private enum Wave
         {
@@ -54,7 +51,7 @@ namespace GunJump.EditorTools
             }
         }
 
-        private static readonly SoundDefault[] Defaults =
+        private static readonly SoundDefault[] defaults =
         {
             new SoundDefault(SoundId.ButtonClick, "ui_click", 0.7f, 0f),
             new SoundDefault(SoundId.ShopTab, "ui_tab", 0.7f, 0f),
@@ -91,38 +88,35 @@ namespace GunJump.EditorTools
 
             string pending = assigned
                 ? "El Bootstrapper de MainMenu ya lo tiene asignado."
-                : $"No se pudo asignar al Bootstrapper: abrí {MainMenuScenePath} y arrastrá el AudioLibrary a su campo 'Audio Library'.";
-            Debug.Log($"Audio listo: {created} clips provisorios nuevos en {AudioFolder}, biblioteca en {LibraryPath}. {pending}", library);
+                : $"No se pudo asignar al Bootstrapper: abrí {MAIN_MENU_SCENE_PATH} y arrastrá el AudioLibrary a su campo 'Audio Library'.";
+            Debug.Log($"Audio listo: {created} clips provisorios nuevos en {AUDIO_FOLDER}, biblioteca en {LIBRARY_PATH}. {pending}", library);
         }
 
-        // ---- Clips ----
-
-        // Solo escribe los que faltan: un clip real guardado con el mismo nombre no se pisa.
         private static int CreateMissingClips()
         {
-            Directory.CreateDirectory(AudioFolder);
+            Directory.CreateDirectory(AUDIO_FOLDER);
             int created = 0;
 
-            foreach (SoundDefault sound in Defaults)
+            foreach (SoundDefault sound in defaults)
             {
                 if (WriteIfMissing(sound.File, () => RenderSound(sound.Id)))
                     created++;
             }
 
-            if (WriteIfMissing(MenuMusicFile, RenderMenuMusic))
+            if (WriteIfMissing(MENU_MUSIC_FILE, RenderMenuMusic))
                 created++;
-            if (WriteIfMissing(GameplayMusicFile, RenderGameplayMusic))
+            if (WriteIfMissing(GAMEPLAY_MUSIC_FILE, RenderGameplayMusic))
                 created++;
 
             AssetDatabase.Refresh();
-            StreamMusic(MenuMusicFile);
-            StreamMusic(GameplayMusicFile);
+            StreamMusic(MENU_MUSIC_FILE);
+            StreamMusic(GAMEPLAY_MUSIC_FILE);
             return created;
         }
 
         private static string ClipPath(string file)
         {
-            return $"{AudioFolder}/{file}.wav";
+            return $"{AUDIO_FOLDER}/{file}.wav";
         }
 
         private static bool WriteIfMissing(string file, Func<float[]> render)
@@ -135,7 +129,6 @@ namespace GunJump.EditorTools
             return true;
         }
 
-        // La música se lee del disco mientras suena en vez de cargarse entera en memoria.
         private static void StreamMusic(string file)
         {
             if (!(AssetImporter.GetAtPath(ClipPath(file)) is AudioImporter importer))
@@ -150,25 +143,22 @@ namespace GunJump.EditorTools
             importer.SaveAndReimport();
         }
 
-        // ---- AudioLibrary ----
-
-        // Completa solo lo que está vacío: los clips y volúmenes que ya se ajustaron a mano quedan como están.
         private static AudioLibrary CreateOrUpdateLibrary()
         {
-            AudioLibrary library = AssetDatabase.LoadAssetAtPath<AudioLibrary>(LibraryPath);
+            AudioLibrary library = AssetDatabase.LoadAssetAtPath<AudioLibrary>(LIBRARY_PATH);
             if (library == null)
             {
-                if (!AssetDatabase.IsValidFolder(LibraryFolder))
-                    AssetDatabase.CreateFolder(DataFolder, "Audio");
+                if (!AssetDatabase.IsValidFolder(LIBRARY_FOLDER))
+                    AssetDatabase.CreateFolder(DATA_FOLDER, "Audio");
 
                 library = ScriptableObject.CreateInstance<AudioLibrary>();
-                AssetDatabase.CreateAsset(library, LibraryPath);
+                AssetDatabase.CreateAsset(library, LIBRARY_PATH);
             }
 
-            var serialized = new SerializedObject(library);
+            SerializedObject serialized = new SerializedObject(library);
             SerializedProperty sounds = serialized.FindProperty("sounds");
 
-            foreach (SoundDefault sound in Defaults)
+            foreach (SoundDefault sound in defaults)
             {
                 SerializedProperty entry = FindEntry(sounds, sound.Id);
                 if (entry == null)
@@ -191,13 +181,13 @@ namespace GunJump.EditorTools
             {
                 sceneMusic.arraySize = 1;
                 SerializedProperty menu = sceneMusic.GetArrayElementAtIndex(0);
-                menu.FindPropertyRelative("sceneName").stringValue = MainMenuSceneName;
-                menu.FindPropertyRelative("clip").objectReferenceValue = LoadClip(MenuMusicFile);
+                menu.FindPropertyRelative("sceneName").stringValue = MAIN_MENU_SCENE_NAME;
+                menu.FindPropertyRelative("clip").objectReferenceValue = LoadClip(MENU_MUSIC_FILE);
             }
 
             SerializedProperty defaultMusic = serialized.FindProperty("defaultMusic");
             if (defaultMusic.objectReferenceValue == null)
-                defaultMusic.objectReferenceValue = LoadClip(GameplayMusicFile);
+                defaultMusic.objectReferenceValue = LoadClip(GAMEPLAY_MUSIC_FILE);
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(library);
@@ -222,29 +212,26 @@ namespace GunJump.EditorTools
             return AssetDatabase.LoadAssetAtPath<AudioClip>(ClipPath(file));
         }
 
-        // ---- Bootstrapper ----
-
-        // Abre MainMenu al lado de la escena actual, asigna la biblioteca, guarda y la vuelve a cerrar.
         private static bool AssignToBootstrapper(AudioLibrary library)
         {
-            if (!File.Exists(MainMenuScenePath))
+            if (!File.Exists(MAIN_MENU_SCENE_PATH))
                 return false;
 
-            Scene scene = SceneManager.GetSceneByPath(MainMenuScenePath);
+            Scene scene = SceneManager.GetSceneByPath(MAIN_MENU_SCENE_PATH);
             bool wasOpen = scene.IsValid() && scene.isLoaded;
             if (!wasOpen)
-                scene = EditorSceneManager.OpenScene(MainMenuScenePath, OpenSceneMode.Additive);
+                scene = EditorSceneManager.OpenScene(MAIN_MENU_SCENE_PATH, OpenSceneMode.Additive);
 
             bool assigned = false;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
                 foreach (MonoBehaviour behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
                 {
-                    if (behaviour == null || behaviour.GetType().Name != BootstrapperTypeName)
+                    if (behaviour == null || behaviour.GetType().Name != BOOTSTRAPPER_TYPE_NAME)
                         continue;
 
-                    var serialized = new SerializedObject(behaviour);
-                    SerializedProperty field = serialized.FindProperty(BootstrapperLibraryField);
+                    SerializedObject serialized = new SerializedObject(behaviour);
+                    SerializedProperty field = serialized.FindProperty(BOOTSTRAPPER_LIBRARY_FIELD);
                     if (field == null)
                         continue;
 
@@ -266,11 +253,9 @@ namespace GunJump.EditorTools
             return assigned;
         }
 
-        // ---- Síntesis de los efectos ----
-
         private static float[] RenderSound(SoundId id)
         {
-            var random = new System.Random(NoiseSeed + (int)id);
+            System.Random random = new System.Random(NOISE_SEED + (int)id);
             float[] b;
 
             switch (id)
@@ -380,13 +365,9 @@ namespace GunJump.EditorTools
             }
         }
 
-        // ---- Síntesis de la música ----
-        // Cada acorde: la nota del bajo y tres notas para el arpegio, en números MIDI. Un compás por acorde.
-        // Las colas de las notas dan la vuelta al principio del buffer, así el loop no tiene corte.
-
         private static float[] RenderMenuMusic()
         {
-            const float bpm = 96f;
+            const float BPM = 96f;
             int[][] chords =
             {
                 new[] { 45, 57, 60, 64 },
@@ -396,7 +377,7 @@ namespace GunJump.EditorTools
             };
             int[] arpeggio = { 0, 1, 2, 1, 0, 2, 1, 2 };
 
-            float beat = 60f / bpm;
+            float beat = 60f / BPM;
             float[] b = NewBuffer(chords.Length * 4 * beat);
 
             for (int bar = 0; bar < chords.Length; bar++)
@@ -419,8 +400,8 @@ namespace GunJump.EditorTools
 
         private static float[] RenderGameplayMusic()
         {
-            const float bpm = 132f;
-            const int repeats = 2;
+            const float BPM = 132f;
+            const int REPEATS = 2;
             int[][] chords =
             {
                 new[] { 40, 64, 67, 71 },
@@ -431,9 +412,9 @@ namespace GunJump.EditorTools
             int[] lead = { 0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 2, 1, 0, 1 };
             int[] leadHigh = { 2, 1, 0, 1, 2, 1, 2, 0, 2, 1, 0, 1, 2, 2, 1, 0 };
 
-            var random = new System.Random(NoiseSeed);
-            float beat = 60f / bpm;
-            int bars = chords.Length * repeats;
+            System.Random random = new System.Random(NOISE_SEED);
+            float beat = 60f / BPM;
+            int bars = chords.Length * REPEATS;
             float[] b = NewBuffer(bars * 4 * beat);
 
             for (int bar = 0; bar < bars; bar++)
@@ -472,11 +453,9 @@ namespace GunJump.EditorTools
             return b;
         }
 
-        // ---- Piezas del sintetizador ----
-
         private static float[] NewBuffer(float seconds)
         {
-            return new float[Mathf.RoundToInt(seconds * SampleRate)];
+            return new float[Mathf.RoundToInt(seconds * SAMPLE_RATE)];
         }
 
         private static float Midi(int note)
@@ -484,18 +463,17 @@ namespace GunJump.EditorTools
             return 440f * Mathf.Pow(2f, (note - 69) / 12f);
         }
 
-        // Una nota que puede barrer de una frecuencia a otra y se apaga con caída exponencial.
         private static void Tone(float[] buffer, bool wrap, float start, float duration, float fromHz, float toHz,
             float amplitude, float decay, Wave wave)
         {
-            int first = Mathf.RoundToInt(start * SampleRate);
-            int count = Mathf.RoundToInt(duration * SampleRate);
+            int first = Mathf.RoundToInt(start * SAMPLE_RATE);
+            int count = Mathf.RoundToInt(duration * SAMPLE_RATE);
             double phase = 0.0;
 
             for (int i = 0; i < count; i++)
             {
-                float time = i / (float)SampleRate;
-                phase += Mathf.Lerp(fromHz, toHz, i / (float)count) / SampleRate;
+                float time = i / (float)SAMPLE_RATE;
+                phase += Mathf.Lerp(fromHz, toHz, i / (float)count) / SAMPLE_RATE;
                 float cycle = (float)(phase - Math.Floor(phase));
 
                 float value;
@@ -516,27 +494,25 @@ namespace GunJump.EditorTools
             }
         }
 
-        // Ruido blanco; smoothing lo va apagando hacia los graves (0 = blanco, cerca de 1 = sordo).
         private static void Noise(float[] buffer, bool wrap, System.Random random, float start, float duration,
             float amplitude, float decay, float smoothing)
         {
-            int first = Mathf.RoundToInt(start * SampleRate);
-            int count = Mathf.RoundToInt(duration * SampleRate);
+            int first = Mathf.RoundToInt(start * SAMPLE_RATE);
+            int count = Mathf.RoundToInt(duration * SAMPLE_RATE);
             float last = 0f;
 
             for (int i = 0; i < count; i++)
             {
                 float white = (float)(random.NextDouble() * 2.0 - 1.0);
                 last = Mathf.Lerp(white, last, smoothing);
-                Add(buffer, wrap, first + i, last * amplitude * Envelope(i / (float)SampleRate, duration, decay));
+                Add(buffer, wrap, first + i, last * amplitude * Envelope(i / (float)SAMPLE_RATE, duration, decay));
             }
         }
 
-        // Entrada y salida cortas para que la nota no haga "clic" al empezar ni al cortarse.
         private static float Envelope(float time, float duration, float decay)
         {
-            float attack = Mathf.Clamp01(time / AttackSeconds);
-            float release = Mathf.Clamp01((duration - time) / ReleaseSeconds);
+            float attack = Mathf.Clamp01(time / ATTACK_SECONDS);
+            float release = Mathf.Clamp01((duration - time) / RELEASE_SECONDS);
             return attack * release * Mathf.Exp(-decay * time);
         }
 
@@ -562,34 +538,33 @@ namespace GunJump.EditorTools
             if (peak <= 0f)
                 return samples;
 
-            float gain = PeakLevel / peak;
+            float gain = PEAK_LEVEL / peak;
             for (int i = 0; i < samples.Length; i++)
                 samples[i] *= gain;
 
             return samples;
         }
 
-        // WAV PCM de 16 bits, mono.
         private static void WriteWav(string path, float[] samples)
         {
-            const short channels = 1;
-            const short bitsPerSample = 16;
-            const int headerSizeAfterRiff = 36;
-            int dataSize = samples.Length * (bitsPerSample / 8);
+            const short CHANNELS = 1;
+            const short BITS_PER_SAMPLE = 16;
+            const int HEADER_SIZE_AFTER_RIFF = 36;
+            int dataSize = samples.Length * (BITS_PER_SAMPLE / 8);
 
-            using (var writer = new BinaryWriter(File.Create(path)))
+            using (BinaryWriter writer = new BinaryWriter(File.Create(path)))
             {
                 writer.Write(System.Text.Encoding.ASCII.GetBytes("RIFF"));
-                writer.Write(headerSizeAfterRiff + dataSize);
+                writer.Write(HEADER_SIZE_AFTER_RIFF + dataSize);
                 writer.Write(System.Text.Encoding.ASCII.GetBytes("WAVE"));
                 writer.Write(System.Text.Encoding.ASCII.GetBytes("fmt "));
                 writer.Write(16);
                 writer.Write((short)1);
-                writer.Write(channels);
-                writer.Write(SampleRate);
-                writer.Write(SampleRate * channels * (bitsPerSample / 8));
-                writer.Write((short)(channels * (bitsPerSample / 8)));
-                writer.Write(bitsPerSample);
+                writer.Write(CHANNELS);
+                writer.Write(SAMPLE_RATE);
+                writer.Write(SAMPLE_RATE * CHANNELS * (BITS_PER_SAMPLE / 8));
+                writer.Write((short)(CHANNELS * (BITS_PER_SAMPLE / 8)));
+                writer.Write(BITS_PER_SAMPLE);
                 writer.Write(System.Text.Encoding.ASCII.GetBytes("data"));
                 writer.Write(dataSize);
 

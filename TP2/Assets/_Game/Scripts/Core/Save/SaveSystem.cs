@@ -16,7 +16,6 @@ namespace GunJump.Core
 
         public void Save(ProgressSnapshot snapshot)
         {
-            // Se escribe a un temporal y se reemplaza: si la app muere a mitad de camino, el guardado anterior sigue entero.
             string temporary = path + ".tmp";
             File.WriteAllText(temporary, JsonUtility.ToJson(snapshot));
 
@@ -26,7 +25,6 @@ namespace GunJump.Core
             File.Move(temporary, path);
         }
 
-        // Devuelve null si no hay guardado o si el archivo está dañado.
         public ProgressSnapshot Load()
         {
             if (!File.Exists(path))

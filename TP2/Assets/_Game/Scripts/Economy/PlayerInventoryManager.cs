@@ -36,7 +36,7 @@ namespace _Game.Scripts.Economy
 
         public InventorySnapshot CreateSnapshot()
         {
-            var snapshot = new InventorySnapshot();
+            InventorySnapshot snapshot = new InventorySnapshot();
 
             foreach (ShopItem item in owned)
             {
@@ -46,8 +46,6 @@ namespace _Game.Scripts.Economy
             return snapshot;
         }
 
-        // Lo que ya no está en el catálogo (un ítem borrado o renombrado) se descarta.
-        // No avisa Changed: restaurar no es un cambio que haya que volver a guardar.
         public void Restore(InventorySnapshot snapshot)
         {
             owned.Clear();

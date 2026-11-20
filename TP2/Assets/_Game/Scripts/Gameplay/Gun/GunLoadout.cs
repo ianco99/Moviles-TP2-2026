@@ -3,8 +3,6 @@ using _Game.Scripts.Shop;
 
 namespace GunJump.Gameplay
 {
-    // Lo que el jugador tiene equipado para el arma, una pieza por categoría de la tienda.
-    // Cualquiera puede ser null: esa parte queda como la trae el arma.
     public readonly struct GunLoadout
     {
         public readonly ShopItem Gun;

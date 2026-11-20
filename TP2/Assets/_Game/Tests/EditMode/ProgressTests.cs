@@ -25,7 +25,7 @@ namespace GunJump.Tests
         [Test]
         public void Spend_FailsWithoutEnoughCoins()
         {
-            var progress = new PlayerProgress();
+            PlayerProgress progress = new PlayerProgress();
             progress.AddCoins(100);
 
             Assert.IsFalse(progress.TrySpend(250));
@@ -37,7 +37,7 @@ namespace GunJump.Tests
         [Test]
         public void RecordLevel_ReportsFirstClearOnce()
         {
-            var progress = new PlayerProgress();
+            PlayerProgress progress = new PlayerProgress();
 
             Assert.IsTrue(progress.RecordLevel("Level1", 1, 500));
             Assert.IsFalse(progress.RecordLevel("Level1", 3, 400));
@@ -46,7 +46,7 @@ namespace GunJump.Tests
         [Test]
         public void RecordLevel_KeepsTheBestResult()
         {
-            var progress = new PlayerProgress();
+            PlayerProgress progress = new PlayerProgress();
 
             progress.RecordLevel("Level1", 3, 400);
             progress.RecordLevel("Level1", 1, 900);
@@ -59,15 +59,15 @@ namespace GunJump.Tests
         [Test]
         public void Snapshot_SurvivesSaveAndLoad()
         {
-            var original = new PlayerProgress();
+            PlayerProgress original = new PlayerProgress();
             original.AddCoins(340);
             original.RecordLevel("Level1", 3, 1200);
             original.RecordLevel("Level2", 1, 300);
 
-            var save = new SaveSystem(path);
+            SaveSystem save = new SaveSystem(path);
             save.Save(original.CreateSnapshot());
 
-            var restored = new PlayerProgress();
+            PlayerProgress restored = new PlayerProgress();
             restored.Restore(new SaveSystem(path).Load());
 
             Assert.AreEqual(340, restored.Coins);
@@ -79,14 +79,14 @@ namespace GunJump.Tests
         [Test]
         public void Snapshot_IsACopyNotALiveView()
         {
-            var progress = new PlayerProgress();
+            PlayerProgress progress = new PlayerProgress();
             progress.RecordLevel("Level1", 1, 100);
             ProgressSnapshot snapshot = progress.CreateSnapshot();
 
             progress.AddCoins(999);
             progress.RecordLevel("Level1", 3, 800);
 
-            var restored = new PlayerProgress();
+            PlayerProgress restored = new PlayerProgress();
             restored.Restore(snapshot);
             Assert.AreEqual(0, restored.Coins);
             Assert.AreEqual(1, restored.StarsFor("Level1"));
@@ -95,15 +95,15 @@ namespace GunJump.Tests
         [Test]
         public void Save_OverwritesThePreviousFile()
         {
-            var save = new SaveSystem(path);
-            var progress = new PlayerProgress();
+            SaveSystem save = new SaveSystem(path);
+            PlayerProgress progress = new PlayerProgress();
 
             progress.AddCoins(10);
             save.Save(progress.CreateSnapshot());
             progress.AddCoins(5);
             save.Save(progress.CreateSnapshot());
 
-            var restored = new PlayerProgress();
+            PlayerProgress restored = new PlayerProgress();
             restored.Restore(save.Load());
             Assert.AreEqual(15, restored.Coins);
             Assert.IsFalse(File.Exists(path + ".tmp"));

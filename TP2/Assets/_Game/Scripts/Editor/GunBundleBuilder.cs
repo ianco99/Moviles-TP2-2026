@@ -8,18 +8,9 @@ using UnityEngine;
 
 namespace GunJump.EditorTools
 {
-    // Arma los AssetBundles del arma, uno por categoría de la tienda (ver Sources).
-    // - Para Play mode: GunJump > Asset Bundles > Build Gun Bundles (Editor), o solo, al dar Play si falta alguno.
-    // - Para el build: el botón Build (o Build And Run) los arma ANTES de empezar el build del jugador,
-    //   y PrepareForBuild solo los copia a StreamingAssets. Así nunca hay que commitearlos ni se puede subir uno viejo.
-    //
-    // No se pueden armar adentro de PrepareForBuild: BuildPipeline.BuildAssetBundles abre y cierra su propio
-    // BuildReport en medio del build del jugador, y el Editor se cae apenas el build sigue
-    // (crash nativo en BuildReport::BeginBuildStep / AddMessage, Unity 6000.3).
     [InitializeOnLoad]
     public sealed class GunBundleBuilder : BuildPlayerProcessor
     {
-        // Carpeta armada por BuildBundlesThenPlayer para el build en curso; PrepareForBuild la consume.
         private static string s_preparedOutput;
 
         static GunBundleBuilder()
@@ -27,8 +18,6 @@ namespace GunJump.EditorTools
             BuildPlayerWindow.RegisterBuildPlayerHandler(BuildBundlesThenPlayer);
         }
 
-        // De dónde sale cada bundle. Solo los modelos de armas son obligatorios: una categoría
-        // sin contenido no arma bundle y sus items usan lo que el arma trae por defecto.
         internal static readonly BundleSource[] Sources =
         {
             new BundleSource(ShopCategory.Guns, "Assets/_Game/Art/Models", "t:Model", required: true),
@@ -39,13 +28,11 @@ namespace GunJump.EditorTools
 
         public override int callbackOrder => 0;
 
-        // Reemplaza lo que hace el botón Build de File > Build Profiles: primero los bundles, después el jugador.
-        // Son dos builds seguidos, no uno adentro del otro.
         private static void BuildBundlesThenPlayer(BuildPlayerOptions options)
         {
             try
             {
-                s_preparedOutput = Build(options.target, ContentBundle.PlayerPlatformFolder);
+                s_preparedOutput = Build(options.target, ContentBundle.PLAYER_PLATFORM_FOLDER);
             }
             catch (BuildFailedException e)
             {
@@ -71,7 +58,7 @@ namespace GunJump.EditorTools
                     "de File > Build Profiles (no se pueden armar adentro del build: hacen caer al Editor).");
             }
 
-            buildPlayerContext.AddAdditionalPathToStreamingAssets(s_preparedOutput, ContentBundle.StreamingFolder);
+            buildPlayerContext.AddAdditionalPathToStreamingAssets(s_preparedOutput, ContentBundle.STREAMING_FOLDER);
         }
 
         [MenuItem("GunJump/Asset Bundles/Build Gun Bundles (Editor)")]
@@ -80,7 +67,7 @@ namespace GunJump.EditorTools
             try
             {
                 string output = BuildForEditor();
-                EditorUtility.RevealInFinder(Path.Combine(output, ShopBundles.Guns));
+                EditorUtility.RevealInFinder(Path.Combine(output, ShopBundles.GUNS));
             }
             catch (BuildFailedException e)
             {
@@ -88,12 +75,6 @@ namespace GunJump.EditorTools
             }
         }
 
-        // Siempre para Android, y solo si Android es la plataforma activa:
-        // - armar un bundle compila los scripts del jugador para esa plataforma, y los que usan
-        //   GooglePlayGames solo compilan para Android;
-        // - armarlo para otra plataforma que la activa puede dejar el Editor cambiado a esa plataforma
-        //   si el build falla (ya pasó: quedó en Windows).
-        // Los shaders de un bundle de Android no andan en el Editor; ContentBundle los reemplaza al cargar.
         public static string BuildForEditor()
         {
             BuildTarget active = EditorUserBuildSettings.activeBuildTarget;
@@ -105,17 +86,16 @@ namespace GunJump.EditorTools
                     "y volvé a armar los bundles del arma.");
             }
 
-            return Build(BuildTarget.Android, ContentBundle.EditorPlatformFolder);
+            return Build(BuildTarget.Android, ContentBundle.EDITOR_PLATFORM_FOLDER);
         }
 
-        // Devuelve la carpeta donde quedaron los bundles.
         private static string Build(BuildTarget target, string platformFolder)
         {
-            string output = Path.Combine(ContentBundle.OutputRoot, platformFolder);
+            string output = Path.Combine(ContentBundle.OUTPUT_ROOT, platformFolder);
             Directory.CreateDirectory(output);
 
-            var builds = new List<AssetBundleBuild>(Sources.Length);
-            var contents = new Dictionary<ShopCategory, HashSet<string>>();
+            List<AssetBundleBuild> builds = new List<AssetBundleBuild>(Sources.Length);
+            Dictionary<ShopCategory, HashSet<string>> contents = new Dictionary<ShopCategory, HashSet<string>>();
 
             foreach (BundleSource source in Sources)
             {
@@ -157,8 +137,6 @@ namespace GunJump.EditorTools
             return output;
         }
 
-        // Avisa de los items del catálogo cuyo Asset Name no está en el bundle de su categoría (no frena el build).
-        // Las categorías sin contenido no avisan: todavía no se espera que sus items tengan Asset Name.
         private static void ValidateCatalogs(Dictionary<ShopCategory, HashSet<string>> contents)
         {
             foreach (string guid in AssetDatabase.FindAssets("t:ShopCatalog"))
@@ -175,7 +153,7 @@ namespace GunJump.EditorTools
                         continue;
                     }
 
-                    var problems = new List<string>();
+                    List<string> problems = new List<string>();
 
                     foreach (ShopItem item in catalog.GetItems(source.Category))
                     {
@@ -223,12 +201,11 @@ namespace GunJump.EditorTools
             public bool HasContent => AssetDatabase.IsValidFolder(Folder) &&
                                       AssetDatabase.FindAssets(Filter, new[] { Folder }).Length > 0;
 
-            // Devuelve los nombres con los que se piden los assets (el nombre del archivo sin extensión).
             public HashSet<string> FindAssetNames(out AssetBundleBuild build)
             {
-                var names = new HashSet<string>();
-                var assetPaths = new List<string>();
-                var addressableNames = new List<string>();
+                HashSet<string> names = new HashSet<string>();
+                List<string> assetPaths = new List<string>();
+                List<string> addressableNames = new List<string>();
 
                 if (AssetDatabase.IsValidFolder(Folder))
                 {
@@ -259,7 +236,6 @@ namespace GunJump.EditorTools
         }
     }
 
-    // Si se da Play sin haber armado alguno de los bundles del Editor, los arma antes de entrar.
     [InitializeOnLoad]
     internal static class GunBundlePlayModeCheck
     {
@@ -290,7 +266,6 @@ namespace GunJump.EditorTools
 
         private static bool IsAnyBundleMissing()
         {
-            // Sin el manifest, ContentLibrary no sabe qué bundles cargar antes de cada uno.
             if (!File.Exists(ContentBundle.PathOf(ContentBundle.ManifestBundleName)))
             {
                 return true;

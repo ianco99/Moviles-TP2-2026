@@ -1,6 +1,5 @@
 namespace GunJump.Core
 {
-    // Reintentar, siguiente nivel y volver al menú son el mismo comando con otra escena.
     public sealed class LoadSceneCommand : ICommand
     {
         readonly SceneLoader loader;

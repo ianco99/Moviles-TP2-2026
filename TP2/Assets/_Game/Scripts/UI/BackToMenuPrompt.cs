@@ -6,8 +6,6 @@ using UnityEngine.UI;
 
 namespace GunJump.UI
 {
-    // El botón de volver de un nivel: congela el juego y pregunta antes de salir al menú.
-    // Mientras el panel está abierto, su fondo tapa toda la pantalla y ningún toque llega a disparar.
     public sealed class BackToMenuPrompt : MonoBehaviour
     {
         [SerializeField] Button openButton;
@@ -29,7 +27,6 @@ namespace GunJump.UI
 
         void Open()
         {
-            // Durante una carga (por ejemplo, el reinicio al caerse) el tiempo lo maneja LevelLoader.
             if (leaving || panel.activeSelf || IsLoading())
                 return;
 
@@ -56,7 +53,6 @@ namespace GunJump.UI
             leaving = true;
             GameAudio.Play(SoundId.ButtonClick);
 
-            // El tiempo sigue detenido mientras carga: LevelLoader lo devuelve cuando el menú ya se ve.
             ServiceProvider services = ServiceProvider.Instance;
             if (services.ContainsService<LevelLoader>())
             {
@@ -64,7 +60,6 @@ namespace GunJump.UI
                 return;
             }
 
-            // Dando Play directo en el nivel no hay servicios: se carga el menú a secas.
             Time.timeScale = 1f;
             SceneManager.LoadScene(menuBuildIndex);
         }

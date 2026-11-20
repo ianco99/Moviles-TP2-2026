@@ -5,31 +5,29 @@ using UnityEngine.SceneManagement;
 
 namespace GunJump.EditorTools
 {
-    // Al dar Play desde una escena del juego, arranca por Boot y Boot carga la escena que estaba abierta.
-    // Sin esto, una escena de nivel abierta sola no tendría quién le entregue los sistemas.
     [InitializeOnLoad]
     public static class PlayFromBoot
     {
-        const string MenuPath = "GunJump/Play From Boot";
-        const string PrefKey = "GunJump.PlayFromBoot";
+        const string MENU_PATH = "GunJump/Play From Boot";
+        const string PREF_KEY = "GunJump.PlayFromBoot";
 
         static PlayFromBoot()
         {
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
         }
 
-        static bool Enabled => EditorPrefs.GetBool(PrefKey, true);
+        static bool Enabled => EditorPrefs.GetBool(PREF_KEY, true);
 
-        [MenuItem(MenuPath)]
+        [MenuItem(MENU_PATH)]
         static void Toggle()
         {
-            EditorPrefs.SetBool(PrefKey, !Enabled);
+            EditorPrefs.SetBool(PREF_KEY, !Enabled);
         }
 
-        [MenuItem(MenuPath, true)]
+        [MenuItem(MENU_PATH, true)]
         static bool ValidateToggle()
         {
-            Menu.SetChecked(MenuPath, Enabled);
+            Menu.SetChecked(MENU_PATH, Enabled);
             return true;
         }
 
@@ -39,16 +37,15 @@ namespace GunJump.EditorTools
                 return;
 
             Scene active = SceneManager.GetActiveScene();
-            var boot = AssetDatabase.LoadAssetAtPath<SceneAsset>(GameSceneBuilder.BootScenePath);
+            SceneAsset boot = AssetDatabase.LoadAssetAtPath<SceneAsset>(GameSceneBuilder.BOOT_SCENE_PATH);
             bool route = Enabled && boot != null && IsGameScene(active.path);
 
-            // Las escenas que no son del juego (pruebas, samples) se abren tal cual.
             EditorSceneManager.playModeStartScene = route ? boot : null;
 
             bool isContent = route
-                             && active.path != GameSceneBuilder.BootScenePath
-                             && active.path != GameSceneBuilder.LoadingScenePath;
-            SessionState.SetString(GameBootstrap.EditorStartSceneKey, isContent ? active.name : string.Empty);
+                             && active.path != GameSceneBuilder.BOOT_SCENE_PATH
+                             && active.path != GameSceneBuilder.LOADING_SCENE_PATH;
+            SessionState.SetString(GameBootstrap.EDITOR_START_SCENE_KEY, isContent ? active.name : string.Empty);
         }
 
         static bool IsGameScene(string path)
@@ -56,7 +53,7 @@ namespace GunJump.EditorTools
             foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
             {
                 if (scene.enabled && scene.path == path)
-                    return path.StartsWith(GameSceneBuilder.ScenesFolder);
+                    return path.StartsWith(GameSceneBuilder.SCENES_FOLDER);
             }
 
             return false;

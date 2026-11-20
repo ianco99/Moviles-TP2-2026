@@ -72,7 +72,6 @@ namespace GunJump.UI
             moneyCount.gameObject.SetActive(false);
         }
 
-        // El panel mide lo justo para el ícono y el número, más el margen interno. Crece hacia la izquierda (pivot arriba a la derecha).
         private void FitToNumber()
         {
             float iconWidth = coinIcon.rect.width;
@@ -93,7 +92,6 @@ namespace GunJump.UI
             backgroundPanel.offsetMax = Vector2.zero;
         }
 
-        // Corre el panel para que no quede debajo del notch o de la cámara perforada.
         private void KeepInSafeArea()
         {
             SafeAreaMath.Anchors(Screen.safeArea, Screen.width, Screen.height, out _, out Vector2 anchorMax);

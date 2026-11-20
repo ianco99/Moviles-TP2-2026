@@ -8,12 +8,10 @@ using Object = UnityEngine.Object;
 
 namespace GunJump.EditorTools
 {
-    // Vuelve a conectar la escena Prototype. Si sus scripts desaparecen con la escena abierta,
-    // Unity pierde las referencias en memoria y al guardar quedan vacías en el archivo.
     public static class PrototypeSceneRepair
     {
-        const string ScenePath = GameSceneBuilder.ScenesFolder + "/Prototype.unity";
-        const string SystemsName = "Systems";
+        const string SCENE_PATH = GameSceneBuilder.SCENES_FOLDER + "/Prototype.unity";
+        const string SYSTEMS_NAME = "Systems";
 
         [MenuItem("GunJump/Repair Prototype Scene")]
         public static void Repair()
@@ -25,30 +23,30 @@ namespace GunJump.EditorTools
             }
 
             Scene scene = SceneManager.GetActiveScene();
-            if (scene.path != ScenePath)
+            if (scene.path != SCENE_PATH)
             {
                 if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
                     return;
 
-                scene = EditorSceneManager.OpenScene(ScenePath);
+                scene = EditorSceneManager.OpenScene(SCENE_PATH);
             }
 
-            var gun = Object.FindAnyObjectByType<Gun>(FindObjectsInactive.Include);
+            Gun gun = Object.FindAnyObjectByType<Gun>(FindObjectsInactive.Include);
             if (gun == null)
             {
                 EditorUtility.DisplayDialog("GunJump", "La escena no tiene un objeto con el componente Gun: no hay nada que conectar.", "Entendido");
                 return;
             }
 
-            GameObject systems = GameObject.Find(SystemsName);
+            GameObject systems = GameObject.Find(SYSTEMS_NAME);
             if (systems == null)
-                systems = new GameObject(SystemsName);
+                systems = new GameObject(SYSTEMS_NAME);
 
-            var input = FindOrAdd<InputReader>(systems);
-            var installer = FindOrAdd<GameplayInstaller>(systems);
-            var loop = FindOrAdd<PrototypeLoop>(systems);
+            InputReader input = FindOrAdd<InputReader>(systems);
+            GameplayInstaller installer = FindOrAdd<GameplayInstaller>(systems);
+            PrototypeLoop loop = FindOrAdd<PrototypeLoop>(systems);
 
-            var eventSystem = Object.FindAnyObjectByType<EventSystem>(FindObjectsInactive.Include);
+            EventSystem eventSystem = Object.FindAnyObjectByType<EventSystem>(FindObjectsInactive.Include);
             if (eventSystem == null)
                 eventSystem = UiFactory.CreateEventSystem();
 
@@ -62,10 +60,10 @@ namespace GunJump.EditorTools
             Debug.Log("GunJump: escena Prototype reparada y guardada.");
         }
 
-        static T FindOrAdd<T>(GameObject host) where T : Component
+        static ComponentType FindOrAdd<ComponentType>(GameObject host) where ComponentType : Component
         {
-            var found = Object.FindAnyObjectByType<T>(FindObjectsInactive.Include);
-            return found != null ? found : host.AddComponent<T>();
+            ComponentType found = Object.FindAnyObjectByType<ComponentType>(FindObjectsInactive.Include);
+            return found != null ? found : host.AddComponent<ComponentType>();
         }
     }
 }

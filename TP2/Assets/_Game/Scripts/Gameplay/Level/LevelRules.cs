@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Reglas comunes a todos los niveles.
     [CreateAssetMenu(menuName = "GunJump/Level Rules", fileName = "LevelRules")]
     public sealed class LevelRules : ScriptableObject
     {

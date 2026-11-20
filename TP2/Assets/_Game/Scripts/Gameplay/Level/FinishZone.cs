@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // La meta: un trigger. Cuando el arma entra, el nivel está ganado.
     [RequireComponent(typeof(Collider))]
     public sealed class FinishZone : MonoBehaviour
     {

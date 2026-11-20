@@ -8,12 +8,12 @@ public class TestLogger : MonoBehaviour
 
 	void Start()
 	{
-		using var cls = new AndroidJavaClass("com.example.kuznickilogger.KuznickiLoggerManager");
-		loggerManagerInstance = cls.CallStatic<AndroidJavaObject>("getInstance");
+		using AndroidJavaClass loggerManagerClass = new AndroidJavaClass("com.example.kuznickilogger.KuznickiLoggerManager");
+		loggerManagerInstance = loggerManagerClass.CallStatic<AndroidJavaObject>("getInstance");
 
 		loggerManagerInstance.Call("sendLong", "Hola desde Unity");
-		long t = loggerManagerInstance.Call<long>("getTime");
-		Debug.Log($"Hora nativa {t}");
+		long nativeTime = loggerManagerInstance.Call<long>("getTime");
+		Debug.Log($"Hora nativa {nativeTime}");
 	}
 
 	private void OnDestroy()

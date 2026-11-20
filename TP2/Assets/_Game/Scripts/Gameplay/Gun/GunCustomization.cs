@@ -7,10 +7,6 @@ using Object = UnityEngine.Object;
 
 namespace GunJump.Gameplay
 {
-    // Viste al arma con lo equipado: modelo, skin, modelo de bala y efecto de disparo.
-    // Cada parte sale del AssetBundle de su categoría; lo que no está equipado o no tiene Asset Name
-    // queda como lo trae el arma. Los bundles son de ContentLibrary y duran toda la sesión: se cargan
-    // al entrar al nivel y, al reintentarlo, el arma nueva los encuentra listos y se viste en el momento.
     public sealed class GunCustomization
     {
         readonly MonoBehaviour runner;
@@ -45,15 +41,11 @@ namespace GunJump.Gameplay
             SetModelFit(modelEulerRotation, fittedModelLength);
         }
 
-        // onDone se llama una sola vez por pedido: cuando el arma ya está vestida, o cuando el pedido deja
-        // de importar (lo reemplaza otro o se destruye el arma). LevelLoader lo usa para sacar la pantalla de carga.
         public void Apply(GunLoadout loadout, ContentLibrary content, Action onDone = null)
         {
             requestId++;
-            // El pedido anterior ya no se va a mostrar.
             FinishPending();
 
-            // Si todo ya se cargó (al reintentar el nivel), se viste ya, sin mostrar el arma por defecto ni un frame.
             if (TryGetLoaded(loadout, content, out Parts parts))
             {
                 Show(parts);
@@ -65,7 +57,6 @@ namespace GunJump.Gameplay
             runner.StartCoroutine(LoadRoutine(loadout, content, requestId));
         }
 
-        // Cambia cómo se acomoda el modelo y acomoda el que ya esté puesto.
         public void SetModelFit(Vector3 eulerRotation, float length)
         {
             modelRotation = Quaternion.Euler(eulerRotation);
@@ -80,13 +71,10 @@ namespace GunJump.Gameplay
             if (shotEffect == null)
                 return;
 
-            // Deja terminar las partículas del tiro anterior y arranca el efecto de nuevo.
             shotEffect.Stop(true, ParticleSystemStopBehavior.StopEmitting);
             shotEffect.Play(true);
         }
 
-        // Solo destruye las instancias: los bundles siguen cargados para el próximo intento.
-        // Las balas con modelo se van con la escena, igual que el arma.
         public void Dispose()
         {
             requestId++;
@@ -102,7 +90,6 @@ namespace GunJump.Gameplay
             done?.Invoke();
         }
 
-        // Lo que sale de los bundles para un equipamiento; null = esa parte queda por defecto.
         struct Parts
         {
             public GameObject Model;
@@ -120,7 +107,7 @@ namespace GunJump.Gameplay
                    && TryGetLoaded(loadout.ShotVfx, content, out parts.ShotEffect);
         }
 
-        static bool TryGetLoaded<T>(ShopItem item, ContentLibrary content, out T asset) where T : Object
+        static bool TryGetLoaded<AssetType>(ShopItem item, ContentLibrary content, out AssetType asset) where AssetType : Object
         {
             asset = null;
 
@@ -132,15 +119,13 @@ namespace GunJump.Gameplay
 
         IEnumerator LoadRoutine(GunLoadout loadout, ContentLibrary content, int id)
         {
-            var parts = new Parts();
+            Parts parts = new Parts();
 
             yield return Load<GameObject>(loadout.Gun, content, loaded => parts.Model = loaded);
             yield return Load<Material>(loadout.Skin, content, loaded => parts.Skin = loaded);
             yield return Load<GameObject>(loadout.Bullet, content, loaded => parts.Bullet = loaded);
             yield return Load<GameObject>(loadout.ShotVfx, content, loaded => parts.ShotEffect = loaded);
 
-            // Si mientras cargaba se pidió otro equipamiento o se destruyó el arma, este resultado ya no sirve
-            // (y su onDone ya se llamó).
             if (id != requestId)
                 yield break;
 
@@ -148,7 +133,7 @@ namespace GunJump.Gameplay
             FinishPending();
         }
 
-        static IEnumerator Load<T>(ShopItem item, ContentLibrary content, Action<T> onLoaded) where T : Object
+        static IEnumerator Load<AssetType>(ShopItem item, ContentLibrary content, Action<AssetType> onLoaded) where AssetType : Object
         {
             if (!IsCustom(item))
                 yield break;
@@ -158,7 +143,6 @@ namespace GunJump.Gameplay
             yield return bundle.LoadAsset(item.AssetName, onLoaded);
         }
 
-        // Sin item o sin Asset Name, esa parte queda como la trae el arma.
         static bool IsCustom(ShopItem item)
         {
             return item != null && !string.IsNullOrEmpty(item.AssetName);
@@ -172,8 +156,6 @@ namespace GunJump.Gameplay
             SetShotEffect(parts.ShotEffect);
         }
 
-        // El modelo se escala a modelLength sobre X y se centra en el arma: el collider, el centro de masa
-        // y la boca del cañón no cambian con el modelo, así que todas las armas se manejan igual.
         void ShowModel(GameObject prefab)
         {
             ClearModel();
@@ -205,8 +187,6 @@ namespace GunJump.Gameplay
             GunSkin.Apply(model != null ? modelRenderers : placeholder, skin);
         }
 
-        // El prefab queda como hijo de la boca del cañón con su transform tal cual:
-        // el eje X local de la boca es la dirección del disparo.
         void SetShotEffect(GameObject prefab)
         {
             ClearShotEffect();
@@ -224,11 +204,9 @@ namespace GunJump.Gameplay
                 return;
             }
 
-            // Por si el prefab tiene Play On Awake: solo tiene que verse al disparar.
             shotEffect.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
-        // Los límites de los renderers medidos en el espacio local del arma.
         Bounds BoundsInGunSpace(Renderer[] renderers)
         {
             Matrix4x4 toGun = gun.worldToLocalMatrix;
@@ -244,7 +222,7 @@ namespace GunJump.Gameplay
 
                 for (int corner = 0; corner < 8; corner++)
                 {
-                    var point = new Vector3(
+                    Vector3 point = new Vector3(
                         (corner & 1) == 0 ? min.x : max.x,
                         (corner & 2) == 0 ? min.y : max.y,
                         (corner & 4) == 0 ? min.z : max.z);
@@ -274,7 +252,6 @@ namespace GunJump.Gameplay
             }
         }
 
-        // Un collider en el modelo se sumaría al Rigidbody del arma y le cambiaría la física.
         static void RemoveColliders(GameObject instance)
         {
             foreach (Collider collider in instance.GetComponentsInChildren<Collider>(true))
@@ -285,7 +262,6 @@ namespace GunJump.Gameplay
         {
             if (model != null)
             {
-                // Destroy recién actúa al final del frame; lo apagamos ya para que no se vea más.
                 model.SetActive(false);
                 Object.Destroy(model);
             }

@@ -8,14 +8,15 @@ namespace GunJump.Core
     {
         readonly Dictionary<string, LevelRecord> levels = new Dictionary<string, LevelRecord>();
 
-        public int Coins { get; private set; }
+        int coins;
+        public int Coins => coins;
 
         public void AddCoins(int amount)
         {
             if (amount < 0)
                 throw new ArgumentOutOfRangeException(nameof(amount));
 
-            Coins += amount;
+            coins += amount;
         }
 
         public bool TrySpend(int amount)
@@ -26,7 +27,7 @@ namespace GunJump.Core
             if (amount > Coins)
                 return false;
 
-            Coins -= amount;
+            coins -= amount;
             return true;
         }
 
@@ -45,7 +46,6 @@ namespace GunJump.Core
             return levels.TryGetValue(levelId, out LevelRecord record) ? record.bestScore : 0;
         }
 
-        // Guarda el mejor resultado del nivel. Devuelve true si es la primera vez que se completa.
         public bool RecordLevel(string levelId, int stars, int score)
         {
             if (!levels.TryGetValue(levelId, out LevelRecord record))
@@ -62,7 +62,7 @@ namespace GunJump.Core
 
         public ProgressSnapshot CreateSnapshot()
         {
-            var snapshot = new ProgressSnapshot { coins = Coins };
+            ProgressSnapshot snapshot = new ProgressSnapshot { coins = Coins };
             foreach (LevelRecord record in levels.Values)
             {
                 snapshot.levels.Add(new LevelRecord
@@ -79,7 +79,7 @@ namespace GunJump.Core
         public void Restore(ProgressSnapshot snapshot)
         {
             levels.Clear();
-            Coins = Math.Max(0, snapshot.coins);
+            coins = Math.Max(0, snapshot.coins);
 
             foreach (LevelRecord record in snapshot.levels)
             {

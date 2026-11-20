@@ -4,8 +4,6 @@ using UnityEngine;
 
 namespace _Game.Scripts.Shop
 {
-    // Todo lo que se vende en la tienda, por categoría. Lo usan la tienda para listar
-    // y PlayerEquipment para convertir el id guardado de vuelta en un ShopItem.
     [CreateAssetMenu(menuName = "GunJump/Shop Catalog", fileName = "ShopCatalog")]
     public sealed class ShopCatalog : ScriptableObject
     {
@@ -20,7 +18,6 @@ namespace _Game.Scripts.Shop
         [Tooltip("Skin equipada cuando el jugador todavía no eligió ninguna. Vacío = el arma con sus propios materiales.")]
         [SerializeField] private ShopItem defaultSkin;
 
-        // Lo que queda equipado en una categoría si el jugador nunca eligió nada; null si esa categoría no tiene.
         public ShopItem GetDefault(ShopCategory category)
         {
             switch (category)

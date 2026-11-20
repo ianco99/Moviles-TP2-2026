@@ -8,8 +8,8 @@ namespace _Game.Scripts.Economy
     // No sabe qué hay adentro de cada foto: solo la guarda y se la devuelve a quien la armó.
     public sealed class EconomySave
     {
-        private const string WalletKey = "Save.Wallet";
-        private const string InventoryKey = "Save.Inventory";
+        private const string WALLET_KEY = "Save.Wallet";
+        private const string INVENTORY_KEY = "Save.Inventory";
 
         private readonly PlayerWalletManager wallet;
         private readonly PlayerInventoryManager inventory;
@@ -19,22 +19,20 @@ namespace _Game.Scripts.Economy
             this.wallet = wallet;
             this.inventory = inventory;
 
-            // Restore no avisa cambios, así que cargar no vuelve a escribir lo que se acaba de leer.
             wallet.Changed += SaveWallet;
             inventory.Changed += SaveInventory;
         }
 
-        // Devuelve false si no había billetera guardada: es la primera vez que se abre el juego.
         public bool Load()
         {
-            InventorySnapshot savedInventory = Read<InventorySnapshot>(InventoryKey);
+            InventorySnapshot savedInventory = Read<InventorySnapshot>(INVENTORY_KEY);
 
             if (savedInventory != null)
             {
                 inventory.Restore(savedInventory);
             }
 
-            WalletSnapshot savedWallet = Read<WalletSnapshot>(WalletKey);
+            WalletSnapshot savedWallet = Read<WalletSnapshot>(WALLET_KEY);
 
             if (savedWallet == null)
             {
@@ -47,22 +45,21 @@ namespace _Game.Scripts.Economy
 
         private void SaveWallet()
         {
-            Write(WalletKey, wallet.CreateSnapshot());
+            Write(WALLET_KEY, wallet.CreateSnapshot());
         }
 
         private void SaveInventory()
         {
-            Write(InventoryKey, inventory.CreateSnapshot());
+            Write(INVENTORY_KEY, inventory.CreateSnapshot());
         }
 
-        private static void Write<T>(string key, T snapshot)
+        private static void Write<SnapshotType>(string key, SnapshotType snapshot)
         {
             PlayerPrefs.SetString(key, JsonUtility.ToJson(snapshot));
             PlayerPrefs.Save();
         }
 
-        // Devuelve null si no hay nada guardado o si el JSON está dañado.
-        private static T Read<T>(string key) where T : class
+        private static SnapshotType Read<SnapshotType>(string key) where SnapshotType : class
         {
             string json = PlayerPrefs.GetString(key, string.Empty);
 
@@ -73,7 +70,7 @@ namespace _Game.Scripts.Economy
 
             try
             {
-                return JsonUtility.FromJson<T>(json);
+                return JsonUtility.FromJson<SnapshotType>(json);
             }
             catch (ArgumentException)
             {

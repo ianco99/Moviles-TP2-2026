@@ -6,7 +6,7 @@ namespace GunJump.Tests
 {
     public class SafeAreaMathTests
     {
-        const float Tolerance = 0.0001f;
+        const float TOLERANCE = 0.0001f;
 
         [Test]
         public void FullScreenSafeArea_FillsTheParent()
@@ -20,13 +20,12 @@ namespace GunJump.Tests
         [Test]
         public void Notch_ShrinksTheTop()
         {
-            // 100 px de notch arriba y 60 px de barra de gestos abajo.
             SafeAreaMath.Anchors(new Rect(0f, 60f, 1080f, 2180f), 1080, 2340, out Vector2 min, out Vector2 max);
 
-            Assert.AreEqual(0f, min.x, Tolerance);
-            Assert.AreEqual(60f / 2340f, min.y, Tolerance);
-            Assert.AreEqual(1f, max.x, Tolerance);
-            Assert.AreEqual(2240f / 2340f, max.y, Tolerance);
+            Assert.AreEqual(0f, min.x, TOLERANCE);
+            Assert.AreEqual(60f / 2340f, min.y, TOLERANCE);
+            Assert.AreEqual(1f, max.x, TOLERANCE);
+            Assert.AreEqual(2240f / 2340f, max.y, TOLERANCE);
         }
 
         [Test]

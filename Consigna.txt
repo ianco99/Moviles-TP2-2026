@@ -1,0 +1,64 @@
+Consigna
+
+Desarrollo de un juego específicamente para la plataforma de móviles. Con un gameplay debe estar específicamente diseñado para esta y hacer uso de sus características.
+
+
+
+El alumno deberá diseñar y desarrollar un gameplay que haga uso de mecánicas e inputs específicos de la plataforma:
+
+Pantalla touch
+y/o giroscopio
+y/o cámara
+etc.
+El gameplay deberá ser sumamente sencillo:
+
+Mecánica y/o visual 2D (opcional)
+Sesión de juego de 3 a 5 minutos de duración. Se tiene que garantizar que el juego sea divertido al menos por ese tiempo.
+Deberá incrementar su dificultad progresivamente a medida que se juega.
+No puede ser un juego exclusivamente "endless"/procedural, tiene que tener distintos niveles.
+Deberá contar con algun sistema de monetizacion interno que sirva para realizar algun tipo de progreso dentro del juego. Ejemplo: Durante los niveles se consiguen monedas que despues se invierte en equipamiento.
+El juego deberá hacer uso de al menos UNA característica de los dispositivos móviles además de la pantalla táctil, tal como:
+
+Cámara
+Vibración
+Distintos sensores
+Giroscopio/Acelerómetro
+Geolocalización
+etc.
+Otras aclaraciones:
+
+Toda la UI deberá ser adaptativa a las distintas resoluciones y aspect ratios de los diferentes dispositivos. Asimismo ningún elemento debe entrar en conflicto con las áreas seguras.
+El juego deberá ser ESTÉTICAMENTE AGRADABLE.
+Deberá tener un flow de pantallas de al menos 3 escenas.
+Deberá hacer correcto uso de los recursos como: memoria RAM, disco, procesamiento y gráficos. (Unidad 4)
+Sprite Atlases
+Transicion asincrónica entre escenas y/o pantallas
+Carga y descarga de assets de memoria
+Optimizacion de Static y Dynamic batching.
+Deberá contar con toda la iconografía necesaria para su publicación: Icono, splash, etc.
+Deberá de tener el plugin nativo desarrollado por el alumno (el de la actividad). Y una forma para acceder a su funcionalidad desde la primera pantalla.
+El juego deberá tener al menos 3 patrones de diseño implementados, distintos a los ya usados en el Trabajo Practico Nro. 1.
+Dentro del juego deberá haber algun tipo de tutorial que explique por lo menos el gameplay.
+Documento de Game Design: Una o dos carillas donde se describa el gameplay del juego, sus distintas pantallas y los distintos features que el juego trae. Puede incluir imagenes y diagrama de flujo de pantallas.
+El juego estará publicado como beta cerrada en el store de Google Play.
+El juego deberá implementar al menos Logros y Leaderboard de los servicio de Google Services. Opcional: Cloudsave y otros.
+La pagina del Store de Google es parte de la entrega, por lo que tiene que tener imagenes, videos y descripciones acordes a un juego publicado.
+El nombre del juego en el store debe ser: "com.<apellido del alumno>2026.<nombre del juego>" . Ej: "com.Corral2026.BestGameEver"
+Agregar a testers los siguientes e-mails: rcorral1989@gmail.com y rc.imagecampus@gmail.com
+
+
+Unity 6000.3.11f1 LTS: https://unity3d.com/es/get-unity/download/archive
+
+
+
+Entrega
+
+Fecha de entrega: 23/11/2026 (23:59hs)
+
+Archivos de entrega: 
+
+Link a un repositorio con el proyecto.
+Un APK
+Documento de Game Design
+.txt donde se aclare los Patrones de diseño usados y donde. (puede estar en el readme del repo)
+Publicado en el Google Play Store. (link a la pagina del store)

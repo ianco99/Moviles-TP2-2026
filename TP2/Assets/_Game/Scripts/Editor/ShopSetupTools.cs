@@ -8,28 +8,26 @@ namespace GunJump.EditorTools
 {
     public static class ShopSetupTools
     {
-        private const string ShopDataFolder = "Assets/_Game/Data/Shop";
-        private const string CatalogPath = ShopDataFolder + "/ShopCatalog.asset";
-        private const string DefaultGunPath = ShopDataFolder + "/Guns/Guns_Pistol.asset";
-        private const string DefaultSkinPath = ShopDataFolder + "/Skins/Skins_Common.asset";
-        private const string StageName = "GunPreviewStage";
-        private static readonly Vector3 StagePosition = new Vector3(0f, -1000f, 0f);
+        private const string SHOP_DATA_FOLDER = "Assets/_Game/Data/Shop";
+        private const string CATALOG_PATH = SHOP_DATA_FOLDER + "/ShopCatalog.asset";
+        private const string DEFAULT_GUN_PATH = SHOP_DATA_FOLDER + "/Guns/Guns_Pistol.asset";
+        private const string DEFAULT_SKIN_PATH = SHOP_DATA_FOLDER + "/Skins/Skins_Common.asset";
+        private const string STAGE_NAME = "GunPreviewStage";
+        private static readonly Vector3 STAGE_POSITION = new Vector3(0f, -1000f, 0f);
 
-        // Junta todos los ShopItem de Data/Shop en un ShopCatalog, por categoría y en orden alfabético
-        // (el mismo orden que tenían las listas en ShopMenuController).
         [MenuItem("GunJump/Shop/Create Shop Catalog")]
         private static void CreateCatalog()
         {
-            if (AssetDatabase.LoadAssetAtPath<ShopCatalog>(CatalogPath) != null &&
-                !EditorUtility.DisplayDialog("GunJump", $"Ya existe {CatalogPath}. ¿Reemplazarlo?", "Reemplazar", "Cancelar"))
+            if (AssetDatabase.LoadAssetAtPath<ShopCatalog>(CATALOG_PATH) != null &&
+                !EditorUtility.DisplayDialog("GunJump", $"Ya existe {CATALOG_PATH}. ¿Reemplazarlo?", "Reemplazar", "Cancelar"))
             {
                 return;
             }
 
-            var byCategory = new Dictionary<ShopCategory, List<ShopItem>>();
-            var paths = new List<string>();
+            Dictionary<ShopCategory, List<ShopItem>> byCategory = new Dictionary<ShopCategory, List<ShopItem>>();
+            List<string> paths = new List<string>();
 
-            foreach (string guid in AssetDatabase.FindAssets("t:ShopItem", new[] { ShopDataFolder }))
+            foreach (string guid in AssetDatabase.FindAssets("t:ShopItem", new[] { SHOP_DATA_FOLDER }))
             {
                 paths.Add(AssetDatabase.GUIDToAssetPath(guid));
             }
@@ -49,18 +47,17 @@ namespace GunJump.EditorTools
                 list.Add(item);
             }
 
-            var catalog = ScriptableObject.CreateInstance<ShopCatalog>();
-            var serialized = new SerializedObject(catalog);
+            ShopCatalog catalog = ScriptableObject.CreateInstance<ShopCatalog>();
+            SerializedObject serialized = new SerializedObject(catalog);
             Fill(serialized.FindProperty("guns"), byCategory, ShopCategory.Guns);
             Fill(serialized.FindProperty("gunSkins"), byCategory, ShopCategory.GunSkins);
             Fill(serialized.FindProperty("bullets"), byCategory, ShopCategory.Bullets);
             Fill(serialized.FindProperty("shotVfx"), byCategory, ShopCategory.ShotVFX);
-            serialized.FindProperty("defaultGun").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DefaultGunPath);
-            serialized.FindProperty("defaultSkin").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DefaultSkinPath);
+            serialized.FindProperty("defaultGun").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DEFAULT_GUN_PATH);
+            serialized.FindProperty("defaultSkin").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ShopItem>(DEFAULT_SKIN_PATH);
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
-            // CreateAsset sobre un archivo existente le cambiaría el GUID y rompería las referencias: copiamos encima.
-            ShopCatalog existing = AssetDatabase.LoadAssetAtPath<ShopCatalog>(CatalogPath);
+            ShopCatalog existing = AssetDatabase.LoadAssetAtPath<ShopCatalog>(CATALOG_PATH);
 
             if (existing != null)
             {
@@ -71,13 +68,13 @@ namespace GunJump.EditorTools
             }
             else
             {
-                AssetDatabase.CreateAsset(catalog, CatalogPath);
+                AssetDatabase.CreateAsset(catalog, CATALOG_PATH);
             }
 
             AssetDatabase.SaveAssets();
             Selection.activeObject = catalog;
             EditorGUIUtility.PingObject(catalog);
-            Debug.Log($"ShopCatalog creado en {CatalogPath} con {paths.Count} items.", catalog);
+            Debug.Log($"ShopCatalog creado en {CATALOG_PATH} con {paths.Count} items.", catalog);
         }
 
         private static void Fill(SerializedProperty list, Dictionary<ShopCategory, List<ShopItem>> byCategory, ShopCategory category)
@@ -92,16 +89,14 @@ namespace GunJump.EditorTools
             }
         }
 
-        // Crea en la escena abierta el escenario de la vista previa: cámara, luz y pivote, lejos de todo,
-        // con el GunPreviewController ya conectado. Falta asignarle el RawImage de la tienda.
         [MenuItem("GunJump/Shop/Create Gun Preview Stage")]
         private static void CreatePreviewStage()
         {
-            GameObject existing = GameObject.Find(StageName);
+            GameObject existing = GameObject.Find(STAGE_NAME);
 
             if (existing != null)
             {
-                if (!EditorUtility.DisplayDialog("GunJump", $"Ya hay un {StageName} en la escena. ¿Reemplazarlo?", "Reemplazar", "Cancelar"))
+                if (!EditorUtility.DisplayDialog("GunJump", $"Ya hay un {STAGE_NAME} en la escena. ¿Reemplazarlo?", "Reemplazar", "Cancelar"))
                 {
                     return;
                 }
@@ -109,18 +104,18 @@ namespace GunJump.EditorTools
                 Undo.DestroyObjectImmediate(existing);
             }
 
-            var stage = new GameObject(StageName);
+            GameObject stage = new GameObject(STAGE_NAME);
             Undo.RegisterCreatedObjectUndo(stage, "Create Gun Preview Stage");
-            stage.transform.position = StagePosition;
+            stage.transform.position = STAGE_POSITION;
 
-            var spinner = new GameObject("Spinner").transform;
+            Transform spinner = new GameObject("Spinner").transform;
             spinner.SetParent(stage.transform, false);
 
-            var cameraObject = new GameObject("PreviewCamera");
+            GameObject cameraObject = new GameObject("PreviewCamera");
             cameraObject.transform.SetParent(stage.transform, false);
             cameraObject.transform.localPosition = new Vector3(0f, 0.25f, -2.2f);
             cameraObject.transform.localRotation = Quaternion.Euler(6f, 0f, 0f);
-            var camera = cameraObject.AddComponent<Camera>();
+            Camera camera = cameraObject.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
             camera.fieldOfView = 30f;
@@ -128,26 +123,25 @@ namespace GunJump.EditorTools
             camera.farClipPlane = 10f;
             camera.enabled = false;
 
-            // Una luz direccional ilumina toda la escena, así que solo la agregamos si no hay ninguna.
             if (!HasDirectionalLight())
             {
-                var lightObject = new GameObject("PreviewLight");
+                GameObject lightObject = new GameObject("PreviewLight");
                 lightObject.transform.SetParent(stage.transform, false);
                 lightObject.transform.localRotation = Quaternion.Euler(40f, -30f, 0f);
-                var light = lightObject.AddComponent<Light>();
+                Light light = lightObject.AddComponent<Light>();
                 light.type = LightType.Directional;
                 light.intensity = 1.2f;
             }
 
-            var controller = stage.AddComponent<GunPreviewController>();
-            var serialized = new SerializedObject(controller);
+            GunPreviewController controller = stage.AddComponent<GunPreviewController>();
+            SerializedObject serialized = new SerializedObject(controller);
             serialized.FindProperty("previewCamera").objectReferenceValue = camera;
             serialized.FindProperty("spinner").objectReferenceValue = spinner;
             serialized.ApplyModifiedPropertiesWithoutUndo();
 
             EditorSceneManager.MarkSceneDirty(stage.scene);
             Selection.activeGameObject = stage;
-            Debug.Log($"{StageName} creado. Falta asignar el RawImage de la tienda en 'Target' y guardar la escena.", stage);
+            Debug.Log($"{STAGE_NAME} creado. Falta asignar el RawImage de la tienda en 'Target' y guardar la escena.", stage);
         }
 
         private static bool HasDirectionalLight()

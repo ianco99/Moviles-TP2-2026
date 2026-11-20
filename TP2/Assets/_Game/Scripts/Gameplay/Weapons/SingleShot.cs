@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Pistola: una bala, un retroceso.
     [CreateAssetMenu(menuName = "GunJump/Fire/Single Shot", fileName = "SingleShot")]
     public sealed class SingleShot : FireStrategy
     {

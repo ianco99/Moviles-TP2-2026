@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Moneda suelta del nivel: un trigger que el arma junta al pasar.
     [RequireComponent(typeof(Collider))]
     public sealed class CoinPickup : MonoBehaviour
     {

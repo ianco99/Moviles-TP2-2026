@@ -2,8 +2,6 @@ using UnityEngine;
 
 namespace GunJump.UI
 {
-    // Ajusta este panel al área segura de la pantalla (notch, cámara perforada, barra de gestos).
-    // Los fondos van fuera de este panel para que lleguen hasta el borde.
     [RequireComponent(typeof(RectTransform))]
     public sealed class SafeAreaFitter : MonoBehaviour
     {

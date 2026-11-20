@@ -4,7 +4,6 @@ using UnityEngine.UI;
 
 namespace GunJump.UI
 {
-    // Un botón que no sabe qué hace: ejecuta el comando que le asignen.
     [RequireComponent(typeof(Button))]
     public sealed class CommandButton : MonoBehaviour
     {

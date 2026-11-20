@@ -12,9 +12,10 @@ namespace _Game.Scripts.Shop
         [SerializeField] private TMP_Text priceLabel;
         [SerializeField] private GameObject equippedMark;
 
-        public event Action<ShopItemView> Clicked;
+        private ShopItem item;
+        public ShopItem Item => item;
 
-        public ShopItem Item { get; private set; }
+        public event Action<ShopItemView> Clicked;
 
         private void Awake()
         {
@@ -28,7 +29,7 @@ namespace _Game.Scripts.Shop
 
         public void Bind(ShopItem item)
         {
-            Item = item;
+            this.item = item;
             icon.sprite = item.Sprite;
             priceLabel.text = item.Price.ToString();
         }

@@ -4,8 +4,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Lo que comparten todas las escenas de nivel: arma, cámara, input, HUD, pausa y resultado.
-    // Conecta esas piezas a mano cuando SceneLoader le entrega el contexto, y lleva el flujo del intento.
     public sealed class LevelCore : SceneEntryPoint
     {
         [SerializeField] LevelSettings settings;
@@ -57,7 +55,7 @@ namespace GunJump.Gameplay
         void BindCommands()
         {
             CommandInvoker commands = context.Commands;
-            var retry = new LoadSceneCommand(context.Loader, levelId);
+            LoadSceneCommand retry = new LoadSceneCommand(context.Loader, levelId);
 
             input.Init(commands, new FireCommand(gun, session));
             hud.PauseButton.Bind(commands, new SetPausedCommand(this, true));

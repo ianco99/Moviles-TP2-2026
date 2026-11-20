@@ -8,7 +8,7 @@ namespace GunJump.Tests
         [Test]
         public void ZeroAmmo_MeansInfinite()
         {
-            var session = new LevelSession(0, 3);
+            LevelSession session = new LevelSession(0, 3);
 
             session.ConsumeAmmo();
 
@@ -20,7 +20,7 @@ namespace GunJump.Tests
         [Test]
         public void FiniteAmmo_RunsOut()
         {
-            var session = new LevelSession(2, 0);
+            LevelSession session = new LevelSession(2, 0);
 
             session.ConsumeAmmo();
             session.ConsumeAmmo();
@@ -34,7 +34,7 @@ namespace GunJump.Tests
         [Test]
         public void Kills_CountEnemiesAndCoins()
         {
-            var session = new LevelSession(0, 2);
+            LevelSession session = new LevelSession(0, 2);
 
             session.RegisterKill(10);
             Assert.IsFalse(session.AllEnemiesKilled);
@@ -48,7 +48,7 @@ namespace GunJump.Tests
         [Test]
         public void Multiplier_KeepsTheHighestHit()
         {
-            var session = new LevelSession(0, 0);
+            LevelSession session = new LevelSession(0, 0);
 
             Assert.AreEqual(1, session.Multiplier);
             session.RegisterMultiplier(4);
@@ -60,7 +60,7 @@ namespace GunJump.Tests
         [Test]
         public void AfterWinning_NothingElseChanges()
         {
-            var session = new LevelSession(5, 1);
+            LevelSession session = new LevelSession(5, 1);
 
             session.Tick(1.5f);
             session.Win();
@@ -80,7 +80,7 @@ namespace GunJump.Tests
         [Test]
         public void AfterLosing_CannotWin()
         {
-            var session = new LevelSession(0, 0);
+            LevelSession session = new LevelSession(0, 0);
 
             session.Lose();
             session.Win();

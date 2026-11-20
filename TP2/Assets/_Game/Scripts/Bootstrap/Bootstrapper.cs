@@ -2,13 +2,13 @@ using System;
 using _Game.Scripts.Economy;
 using _Game.Scripts.Shop;
 using GunJump.Core;
+using GunJump.Platform;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
 
 namespace _Game.Scripts.Bootstrap
 {
-    // Corre antes que los menús para que encuentren los servicios registrados en su Awake.
     [DefaultExecutionOrder(-100)]
     public class Bootstrapper : MonoBehaviour
     {
@@ -24,6 +24,11 @@ namespace _Game.Scripts.Bootstrap
         private void Awake()
         {
             ServiceProvider services = ServiceProvider.Instance;
+
+            if (!services.ContainsService<MobilePlatform>())
+            {
+                services.AddService<MobilePlatform>(new MobilePlatform());
+            }
 
             if (!services.ContainsService<EventBus>())
             {
@@ -52,7 +57,6 @@ namespace _Game.Scripts.Bootstrap
                 services.AddService<ContentLibrary>(new ContentLibrary());
             }
 
-            // Los servicios de la economía viven toda la sesión: se crean y se cargan del guardado una sola vez.
             if (services.ContainsService<PlayerWalletManager>())
             {
                 return;
@@ -68,7 +72,6 @@ namespace _Game.Scripts.Bootstrap
             PlayerInventoryManager inventory = new PlayerInventoryManager(catalog);
             PlayerEquipment equipment = new PlayerEquipment(catalog);
 
-            // Desde acá, cada cambio en la billetera o el inventario se guarda solo.
             EconomySave save = new EconomySave(wallet, inventory);
 
             if (!save.Load())
@@ -83,8 +86,6 @@ namespace _Game.Scripts.Bootstrap
             services.AddService<PlayerEquipment>(equipment);
         }
 
-        // Lo equipado siempre figura como comprado. Cubre el arma por defecto, que se equipa sin comprarla,
-        // y los guardados de antes de que se guardara el inventario. Si alguno era nuevo, el inventario lo guarda.
         private static void OwnEquippedItems(PlayerEquipment equipment, PlayerInventoryManager inventory)
         {
             foreach (ShopCategory category in Enum.GetValues(typeof(ShopCategory)))

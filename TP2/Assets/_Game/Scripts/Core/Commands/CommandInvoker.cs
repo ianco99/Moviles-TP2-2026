@@ -14,14 +14,14 @@ namespace GunJump.Core
         }
     }
 
-    // Ejecuta comandos y, si se le pide, los graba con su tiempo relativo
-    // para poder reproducirlos después (la demo del tutorial).
     public sealed class CommandInvoker
     {
         readonly List<TimedCommand> recording = new List<TimedCommand>();
         float recordingStart;
 
-        public bool IsRecording { get; private set; }
+        bool isRecording;
+        public bool IsRecording => isRecording;
+
         public IReadOnlyList<TimedCommand> Recording => recording;
 
         public void Execute(ICommand command, float time)
@@ -36,12 +36,12 @@ namespace GunJump.Core
         {
             recording.Clear();
             recordingStart = time;
-            IsRecording = true;
+            isRecording = true;
         }
 
         public void StopRecording()
         {
-            IsRecording = false;
+            isRecording = false;
         }
     }
 }

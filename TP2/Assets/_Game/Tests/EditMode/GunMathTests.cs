@@ -6,15 +6,15 @@ namespace GunJump.Tests
 {
     public class GunMathTests
     {
-        const float Tolerance = 0.0001f;
+        const float TOLERANCE = 0.0001f;
 
         [Test]
         public void Recoil_PushesOppositeToBarrel()
         {
             Vector2 result = GunMath.ApplyRecoil(Vector2.zero, Vector2.left, 7f, 1f, 100f);
 
-            Assert.AreEqual(7f, result.x, Tolerance);
-            Assert.AreEqual(0f, result.y, Tolerance);
+            Assert.AreEqual(7f, result.x, TOLERANCE);
+            Assert.AreEqual(0f, result.y, TOLERANCE);
         }
 
         [Test]
@@ -22,7 +22,7 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.ApplyRecoil(Vector2.zero, Vector2.down, 5f, 1f, 100f);
 
-            Assert.AreEqual(5f, result.y, Tolerance);
+            Assert.AreEqual(5f, result.y, TOLERANCE);
         }
 
         [Test]
@@ -30,8 +30,8 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.ApplyRecoil(new Vector2(4f, -6f), Vector2.left, 2f, 0.5f, 100f);
 
-            Assert.AreEqual(4f, result.x, Tolerance);
-            Assert.AreEqual(-3f, result.y, Tolerance);
+            Assert.AreEqual(4f, result.x, TOLERANCE);
+            Assert.AreEqual(-3f, result.y, TOLERANCE);
         }
 
         [Test]
@@ -39,7 +39,7 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.ApplyRecoil(new Vector2(10f, 0f), Vector2.left, 10f, 1f, 14f);
 
-            Assert.AreEqual(14f, result.magnitude, Tolerance);
+            Assert.AreEqual(14f, result.magnitude, TOLERANCE);
         }
 
         [Test]
@@ -47,7 +47,7 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.ApplyRecoil(Vector2.zero, new Vector2(-3f, 0f), 7f, 1f, 100f);
 
-            Assert.AreEqual(7f, result.x, Tolerance);
+            Assert.AreEqual(7f, result.x, TOLERANCE);
         }
 
         [Test]
@@ -56,9 +56,9 @@ namespace GunJump.Tests
             Vector2 sliding = GunMath.EnsureLift(new Vector2(7f, 0f), 5f, 100f);
             Vector2 pushedDown = GunMath.EnsureLift(new Vector2(0f, -7f), 5f, 100f);
 
-            Assert.AreEqual(7f, sliding.x, Tolerance);
-            Assert.AreEqual(5f, sliding.y, Tolerance);
-            Assert.AreEqual(5f, pushedDown.y, Tolerance);
+            Assert.AreEqual(7f, sliding.x, TOLERANCE);
+            Assert.AreEqual(5f, sliding.y, TOLERANCE);
+            Assert.AreEqual(5f, pushedDown.y, TOLERANCE);
         }
 
         [Test]
@@ -66,7 +66,7 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.EnsureLift(new Vector2(0f, 7f), 5f, 100f);
 
-            Assert.AreEqual(7f, result.y, Tolerance);
+            Assert.AreEqual(7f, result.y, TOLERANCE);
         }
 
         [Test]
@@ -74,7 +74,7 @@ namespace GunJump.Tests
         {
             Vector2 result = GunMath.EnsureLift(new Vector2(14f, 0f), 5f, 14f);
 
-            Assert.AreEqual(14f, result.magnitude, Tolerance);
+            Assert.AreEqual(14f, result.magnitude, TOLERANCE);
         }
 
         [Test]
@@ -102,43 +102,43 @@ namespace GunJump.Tests
         [Test]
         public void SpinDamping_SlowsTowardZeroWithoutReversing()
         {
-            Assert.AreEqual(4f, GunMath.DampSpin(10f, 6f, 1f), Tolerance);
-            Assert.AreEqual(0f, GunMath.DampSpin(3f, 6f, 1f), Tolerance);
-            Assert.AreEqual(-4f, GunMath.DampSpin(-10f, 6f, 1f), Tolerance);
+            Assert.AreEqual(4f, GunMath.DampSpin(10f, 6f, 1f), TOLERANCE);
+            Assert.AreEqual(0f, GunMath.DampSpin(3f, 6f, 1f), TOLERANCE);
+            Assert.AreEqual(-4f, GunMath.DampSpin(-10f, 6f, 1f), TOLERANCE);
         }
 
         [Test]
         public void FitToLength_ScalesToTheLengthOnX()
         {
-            var bounds = new Bounds(Vector3.zero, new Vector3(4f, 1f, 0.5f));
+            Bounds bounds = new Bounds(Vector3.zero, new Vector3(4f, 1f, 0.5f));
 
             GunMath.FitToLength(bounds, 1f, out float scale, out _);
 
-            Assert.AreEqual(0.25f, scale, Tolerance);
+            Assert.AreEqual(0.25f, scale, TOLERANCE);
         }
 
         [Test]
         public void FitToLength_CentersTheScaledModel()
         {
-            var bounds = new Bounds(new Vector3(2f, -1f, 0.5f), new Vector3(2f, 1f, 1f));
+            Bounds bounds = new Bounds(new Vector3(2f, -1f, 0.5f), new Vector3(2f, 1f, 1f));
 
             GunMath.FitToLength(bounds, 1f, out float scale, out Vector3 position);
             Vector3 fittedCenter = bounds.center * scale + position;
 
-            Assert.AreEqual(0f, fittedCenter.x, Tolerance);
-            Assert.AreEqual(0f, fittedCenter.y, Tolerance);
-            Assert.AreEqual(0f, fittedCenter.z, Tolerance);
+            Assert.AreEqual(0f, fittedCenter.x, TOLERANCE);
+            Assert.AreEqual(0f, fittedCenter.y, TOLERANCE);
+            Assert.AreEqual(0f, fittedCenter.z, TOLERANCE);
         }
 
         [Test]
         public void FitToLength_WithoutLengthOnX_KeepsTheScale()
         {
-            var bounds = new Bounds(Vector3.one, new Vector3(0f, 1f, 1f));
+            Bounds bounds = new Bounds(Vector3.one, new Vector3(0f, 1f, 1f));
 
             GunMath.FitToLength(bounds, 1f, out float scale, out Vector3 position);
 
-            Assert.AreEqual(1f, scale, Tolerance);
-            Assert.AreEqual(-1f, position.x, Tolerance);
+            Assert.AreEqual(1f, scale, TOLERANCE);
+            Assert.AreEqual(-1f, position.x, TOLERANCE);
         }
 
         [Test]
@@ -146,9 +146,9 @@ namespace GunJump.Tests
         {
             Vector3 result = GunMath.UndoParentScale(Vector3.one, new Vector3(0.35f, 0.1f, 0.1f));
 
-            Assert.AreEqual(1f / 0.35f, result.x, Tolerance);
-            Assert.AreEqual(10f, result.y, Tolerance);
-            Assert.AreEqual(10f, result.z, Tolerance);
+            Assert.AreEqual(1f / 0.35f, result.x, TOLERANCE);
+            Assert.AreEqual(10f, result.y, TOLERANCE);
+            Assert.AreEqual(10f, result.z, TOLERANCE);
         }
     }
 }

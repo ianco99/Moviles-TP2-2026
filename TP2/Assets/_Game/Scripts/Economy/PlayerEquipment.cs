@@ -5,11 +5,9 @@ using UnityEngine;
 
 namespace _Game.Scripts.Economy
 {
-    // Lo que el jugador tiene equipado en cada categoría. Se guarda en PlayerPrefs
-    // (el id del ShopItem) para que sobreviva a cerrar la app.
     public class PlayerEquipment : IService
     {
-        private const string KeyPrefix = "Equipped.";
+        private const string KEY_PREFIX = "Equipped.";
 
         public bool IsPersistance => true;
 
@@ -24,7 +22,7 @@ namespace _Game.Scripts.Economy
         public void Equip(ShopItem item)
         {
             equipped[item.Category] = item;
-            PlayerPrefs.SetString(KeyPrefix + item.Category, item.Id);
+            PlayerPrefs.SetString(KEY_PREFIX + item.Category, item.Id);
             PlayerPrefs.Save();
         }
 
@@ -33,8 +31,6 @@ namespace _Game.Scripts.Economy
             return item != null && GetEquipped(item.Category) == item;
         }
 
-        // Si el jugador nunca eligió nada en esa categoría, cae en el default del catálogo (arma y skin);
-        // devuelve null si la categoría no tiene default.
         public ShopItem GetEquipped(ShopCategory category)
         {
             if (equipped.TryGetValue(category, out ShopItem item))
@@ -42,7 +38,7 @@ namespace _Game.Scripts.Economy
                 return item;
             }
 
-            item = catalog.Find(category, PlayerPrefs.GetString(KeyPrefix + category, string.Empty));
+            item = catalog.Find(category, PlayerPrefs.GetString(KEY_PREFIX + category, string.Empty));
 
             if (item == null)
             {

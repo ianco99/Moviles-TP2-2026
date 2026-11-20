@@ -42,7 +42,6 @@ namespace _Game.Scripts.Economy
             return new WalletSnapshot { money = playerMoney };
         }
 
-        // No avisa Changed: restaurar no es un cambio que haya que volver a guardar.
         public void Restore(WalletSnapshot snapshot)
         {
             playerMoney = Math.Max(0, snapshot.money);

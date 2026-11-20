@@ -4,7 +4,6 @@ using UnityEngine;
 
 namespace GunJump.Core
 {
-    // Todos los clips y volúmenes del juego. Para cambiar un sonido alcanza con reasignar su clip acá.
     [CreateAssetMenu(menuName = "GunJump/Audio Library", fileName = "AudioLibrary")]
     public sealed class AudioLibrary : ScriptableObject
     {

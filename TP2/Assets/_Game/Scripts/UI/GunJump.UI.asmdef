@@ -4,6 +4,7 @@
     "references": [
         "GunJump.Core",
         "GunJump.Economy",
+        "GunJump.Platform",
         "Unity.TextMeshPro",
         "UnityEngine.UI"
     ],

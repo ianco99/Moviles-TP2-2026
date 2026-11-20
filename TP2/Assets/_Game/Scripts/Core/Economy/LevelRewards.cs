@@ -4,7 +4,6 @@ namespace GunJump.Core
 {
     public static class LevelRewards
     {
-        // Una estrella por llegar a la meta, dos por eliminar a todos, tres por hacerlo bajo el tiempo objetivo.
         public static int Stars(bool allEnemiesKilled, float elapsed, float targetTime)
         {
             if (!allEnemiesKilled)

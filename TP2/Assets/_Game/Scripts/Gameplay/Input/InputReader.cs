@@ -9,7 +9,6 @@ using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
 
 namespace GunJump.Gameplay
 {
-    // Convierte cada toque en un comando. Cada dedo que baja cuenta, para que se pueda tocar rápido con dos pulgares.
     public sealed class InputReader : MonoBehaviour
     {
         [Tooltip("Opcional. Si queda vacío se usa el EventSystem activo de la escena.")]
@@ -48,7 +47,6 @@ namespace GunJump.Gameplay
                     Fire(touches[i].screenPosition);
             }
 
-            // El mouse solo existe en el Editor y en PC.
             Mouse mouse = Mouse.current;
             if (mouse != null && mouse.leftButton.wasPressedThisFrame)
                 Fire(mouse.position.ReadValue());

@@ -7,8 +7,6 @@ using UnityEngine;
 
 namespace GunJump.Tests
 {
-    // Las fotos se pasan por JsonUtility igual que hace EconomySave, pero sin tocar PlayerPrefs:
-    // así los tests no pisan el guardado del Editor.
     public class EconomySaveTests
     {
         readonly List<Object> created = new List<Object>();
@@ -16,8 +14,8 @@ namespace GunJump.Tests
         [TearDown]
         public void TearDown()
         {
-            foreach (Object obj in created)
-                Object.DestroyImmediate(obj);
+            foreach (Object createdObject in created)
+                Object.DestroyImmediate(createdObject);
 
             created.Clear();
         }
@@ -25,11 +23,11 @@ namespace GunJump.Tests
         [Test]
         public void Wallet_SurvivesSnapshotRoundTrip()
         {
-            var original = new PlayerWalletManager();
+            PlayerWalletManager original = new PlayerWalletManager();
             original.AddMoney(300.5);
             original.SpendMoney(100);
 
-            var restored = new PlayerWalletManager();
+            PlayerWalletManager restored = new PlayerWalletManager();
             restored.Restore(RoundTrip(original.CreateSnapshot()));
 
             Assert.AreEqual(200.5, restored.PlayerMoney);
@@ -38,7 +36,7 @@ namespace GunJump.Tests
         [Test]
         public void Wallet_RaisesChangedOnlyWhenMoneyChanges()
         {
-            var wallet = new PlayerWalletManager();
+            PlayerWalletManager wallet = new PlayerWalletManager();
             int changes = 0;
             wallet.Changed += () => changes++;
 
@@ -55,10 +53,10 @@ namespace GunJump.Tests
         [Test]
         public void Wallet_RestoreDoesNotRaiseChanged()
         {
-            var source = new PlayerWalletManager();
+            PlayerWalletManager source = new PlayerWalletManager();
             source.AddMoney(10);
 
-            var wallet = new PlayerWalletManager();
+            PlayerWalletManager wallet = new PlayerWalletManager();
             int changes = 0;
             wallet.Changed += () => changes++;
             wallet.Restore(source.CreateSnapshot());
@@ -74,11 +72,11 @@ namespace GunJump.Tests
             ShopItem gold = CreateItem("gold", ShopCategory.GunSkins);
             ShopCatalog catalog = CreateCatalog(new[] { pistol, shotgun }, new[] { gold });
 
-            var original = new PlayerInventoryManager(catalog);
+            PlayerInventoryManager original = new PlayerInventoryManager(catalog);
             original.Add(pistol);
             original.Add(gold);
 
-            var restored = new PlayerInventoryManager(catalog);
+            PlayerInventoryManager restored = new PlayerInventoryManager(catalog);
             restored.Restore(RoundTrip(original.CreateSnapshot()));
 
             Assert.IsTrue(restored.Owns(pistol));
@@ -92,11 +90,11 @@ namespace GunJump.Tests
             ShopItem pistol = CreateItem("pistol", ShopCategory.Guns);
             ShopItem removed = CreateItem("removed", ShopCategory.Guns);
 
-            var original = new PlayerInventoryManager(CreateCatalog(new[] { pistol, removed }, new ShopItem[0]));
+            PlayerInventoryManager original = new PlayerInventoryManager(CreateCatalog(new[] { pistol, removed }, new ShopItem[0]));
             original.Add(pistol);
             original.Add(removed);
 
-            var restored = new PlayerInventoryManager(CreateCatalog(new[] { pistol }, new ShopItem[0]));
+            PlayerInventoryManager restored = new PlayerInventoryManager(CreateCatalog(new[] { pistol }, new ShopItem[0]));
             restored.Restore(RoundTrip(original.CreateSnapshot()));
 
             Assert.IsTrue(restored.Owns(pistol));
@@ -107,7 +105,7 @@ namespace GunJump.Tests
         public void Inventory_RaisesChangedOncePerNewItem()
         {
             ShopItem pistol = CreateItem("pistol", ShopCategory.Guns);
-            var inventory = new PlayerInventoryManager(CreateCatalog(new[] { pistol }, new ShopItem[0]));
+            PlayerInventoryManager inventory = new PlayerInventoryManager(CreateCatalog(new[] { pistol }, new ShopItem[0]));
             int changes = 0;
             inventory.Changed += () => changes++;
 
@@ -117,18 +115,18 @@ namespace GunJump.Tests
             Assert.AreEqual(1, changes);
         }
 
-        static T RoundTrip<T>(T snapshot)
+        static SnapshotType RoundTrip<SnapshotType>(SnapshotType snapshot)
         {
-            return JsonUtility.FromJson<T>(JsonUtility.ToJson(snapshot));
+            return JsonUtility.FromJson<SnapshotType>(JsonUtility.ToJson(snapshot));
         }
 
         ShopItem CreateItem(string id, ShopCategory category)
         {
-            var item = ScriptableObject.CreateInstance<ShopItem>();
+            ShopItem item = ScriptableObject.CreateInstance<ShopItem>();
             item.name = id;
             created.Add(item);
 
-            var serialized = new SerializedObject(item);
+            SerializedObject serialized = new SerializedObject(item);
             serialized.FindProperty("category").enumValueIndex = (int)category;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             return item;
@@ -136,10 +134,10 @@ namespace GunJump.Tests
 
         ShopCatalog CreateCatalog(ShopItem[] guns, ShopItem[] gunSkins)
         {
-            var catalog = ScriptableObject.CreateInstance<ShopCatalog>();
+            ShopCatalog catalog = ScriptableObject.CreateInstance<ShopCatalog>();
             created.Add(catalog);
 
-            var serialized = new SerializedObject(catalog);
+            SerializedObject serialized = new SerializedObject(catalog);
             Fill(serialized.FindProperty("guns"), guns);
             Fill(serialized.FindProperty("gunSkins"), gunSkins);
             serialized.ApplyModifiedPropertiesWithoutUndo();

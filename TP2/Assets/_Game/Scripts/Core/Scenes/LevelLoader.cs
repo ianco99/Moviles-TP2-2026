@@ -6,59 +6,47 @@ using UnityEngine.SceneManagement;
 
 namespace GunJump.Core
 {
-    // Todas las cargas de nivel pasan por acá: desde el menú (con pantalla de carga) y al reintentar (sin ella).
-    // El nivel nuevo se muestra recién cuando todo lo que pidió Hold terminó de cargar; hasta entonces
-    // está tapado y con el tiempo detenido. Avisa cada paso en el EventBus (ver LevelLoadEvents).
     public sealed class LevelLoader : IService
     {
-        // Unity deja el progreso en 0.9 hasta que se permite activar la escena.
-        const float ReadyProgress = 0.9f;
-
-        // Parte de la barra que corresponde a cargar la escena; el resto es lo que piden los Hold.
-        const float SceneProgressShare = 0.8f;
-
-        // Si algo nunca suelta la pantalla de carga, el nivel se muestra igual para no quedar trabados.
-        const float MaxHoldSeconds = 15f;
+        const float READY_PROGRESS = 0.9f;
+        const float SCENE_PROGRESS_SHARE = 0.8f;
+        const float MAX_HOLD_SECONDS = 15f;
 
         readonly EventBus eventBus;
         readonly string loadingScene;
         readonly MonoBehaviour runner;
         int holds;
 
+        bool isLoading;
+        public bool IsLoading => isLoading;
+
         public LevelLoader(EventBus eventBus, string loadingSceneName)
         {
             this.eventBus = eventBus;
             loadingScene = loadingSceneName;
-            // El menú, el nivel y la escena de carga se descargan en el medio de la carga: las corrutinas
-            // corren en un objeto que no se va con ninguno de ellos.
             runner = CoroutineHost.Create(nameof(LevelLoader));
         }
 
         public bool IsPersistance => true;
-        public bool IsLoading { get; private set; }
 
-        // Va a un nivel (o al menú) pasando por la pantalla de carga.
         public void Load(int buildIndex)
         {
             if (IsLoading)
                 return;
 
-            IsLoading = true;
+            isLoading = true;
             runner.StartCoroutine(LoadRoutine(buildIndex));
         }
 
-        // Vuelve a cargar el nivel actual sin pantalla de carga: el nivel viejo se sigue viendo hasta que el nuevo está listo.
         public void Restart()
         {
             if (IsLoading)
                 return;
 
-            IsLoading = true;
+            isLoading = true;
             runner.StartCoroutine(LoadInPlaceRoutine(SceneManager.GetActiveScene().buildIndex));
         }
 
-        // Lo llama, al recibir LevelSceneLoadedEvent, lo que tenga que cargar algo antes de que se vea el nivel.
-        // Cada Hold necesita su Release.
         public void Hold()
         {
             holds++;
@@ -93,16 +81,15 @@ namespace GunJump.Core
 
             AsyncOperation load = SceneManager.LoadSceneAsync(buildIndex, LoadSceneMode.Additive);
             load.allowSceneActivation = false;
-            while (load.progress < ReadyProgress)
+            while (load.progress < READY_PROGRESS)
             {
-                view?.SetProgress(load.progress / ReadyProgress * SceneProgressShare);
+                view?.SetProgress(load.progress / READY_PROGRESS * SCENE_PROGRESS_SHARE);
                 yield return null;
             }
 
             yield return Activate(load);
-            // La luz y el cielo salen de la escena activa.
             SceneManager.SetActiveScene(SceneManager.GetSceneByBuildIndex(buildIndex));
-            view?.SetProgress(SceneProgressShare);
+            view?.SetProgress(SCENE_PROGRESS_SHARE);
 
             yield return WaitUntilReady();
             view?.SetProgress(1f);
@@ -111,14 +98,13 @@ namespace GunJump.Core
             Finish();
         }
 
-        // Reemplaza la escena actual sin pantalla de carga: la vieja se sigue viendo hasta que la nueva se activa.
         IEnumerator LoadInPlaceRoutine(int buildIndex)
         {
             eventBus.Raise<LevelLoadStartedEvent>();
 
             AsyncOperation load = SceneManager.LoadSceneAsync(buildIndex, LoadSceneMode.Single);
             load.allowSceneActivation = false;
-            while (load.progress < ReadyProgress)
+            while (load.progress < READY_PROGRESS)
                 yield return null;
 
             yield return Activate(load);
@@ -126,8 +112,6 @@ namespace GunJump.Core
             Finish();
         }
 
-        // El nivel arranca congelado: mientras se termina de preparar, la física no lo mueve.
-        // Las cargas asíncronas no dependen de timeScale.
         static IEnumerator Activate(AsyncOperation load)
         {
             Time.timeScale = 0f;
@@ -141,12 +125,12 @@ namespace GunJump.Core
             holds = 0;
             eventBus.Raise<LevelSceneLoadedEvent>();
 
-            float deadline = Time.realtimeSinceStartup + MaxHoldSeconds;
+            float deadline = Time.realtimeSinceStartup + MAX_HOLD_SECONDS;
             while (holds > 0)
             {
                 if (Time.realtimeSinceStartup > deadline)
                 {
-                    Debug.LogError($"LevelLoader: después de {MaxHoldSeconds} s todavía hay {holds} Hold sin Release; se muestra el nivel igual.");
+                    Debug.LogError($"LevelLoader: después de {MAX_HOLD_SECONDS} s todavía hay {holds} Hold sin Release; se muestra el nivel igual.");
                     holds = 0;
                     break;
                 }
@@ -158,15 +142,15 @@ namespace GunJump.Core
         void Finish()
         {
             Time.timeScale = 1f;
-            IsLoading = false;
+            isLoading = false;
             eventBus.Raise<LevelLoadFinishedEvent>();
         }
 
-        static T FindInScene<T>(Scene scene) where T : class
+        static ComponentType FindInScene<ComponentType>(Scene scene) where ComponentType : class
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                T found = root.GetComponentInChildren<T>(true);
+                ComponentType found = root.GetComponentInChildren<ComponentType>(true);
                 if (found != null)
                     return found;
             }

@@ -4,8 +4,6 @@ using UnityEngine.UI;
 
 namespace GunJump.UI
 {
-    // Prende y apaga un canal de audio (efectos o música) y muestra cómo quedó.
-    // El estado vive en AudioService: el botón del menú y el del nivel muestran siempre lo mismo.
     [RequireComponent(typeof(Button))]
     public sealed class AudioToggleButton : MonoBehaviour
     {
@@ -25,10 +23,8 @@ namespace GunJump.UI
             button.onClick.AddListener(Toggle);
         }
 
-        // También al volver a mostrarse: el canal pudo cambiar desde otro botón mientras tanto.
         void OnEnable()
         {
-            // Dando Play directo en una escena de nivel no hay AudioService y no hay nada que prender.
             button.interactable = GameAudio.IsAvailable;
             Refresh();
         }
@@ -37,7 +33,6 @@ namespace GunJump.UI
         {
             GameAudio.Toggle(channel);
             Refresh();
-            // Después de cambiar: prender los efectos se escucha, apagarlos no.
             GameAudio.Play(SoundId.ButtonClick);
         }
 

@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Blanco del multiplicador final: hay que pegarle con una bala antes de cruzar la meta.
     public sealed class MultiplierTarget : MonoBehaviour, IBulletTarget
     {
         [Min(1)]

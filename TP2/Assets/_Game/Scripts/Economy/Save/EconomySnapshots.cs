@@ -20,7 +20,6 @@ namespace _Game.Scripts.Economy
         [SerializeField] internal List<OwnedItem> items = new List<OwnedItem>();
     }
 
-    // La categoría va por nombre y no por número: reordenar ShopCategory no rompe los guardados.
     [Serializable]
     internal sealed class OwnedItem
     {

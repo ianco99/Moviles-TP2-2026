@@ -16,11 +16,15 @@ namespace GunJump.UI
         [SerializeField] private Button playButton;
         [SerializeField] private Button shopButton;
         [SerializeField] private Button shopBackButton;
-        
+        [SerializeField] private Button logsButton;
+        [SerializeField] private Button logsBackButton;
+
         [Header("References")]
         [SerializeField] private GameObject landingMenu;
         [SerializeField] private LevelsMenuController levelSelectMenu;
         [SerializeField] private ShopMenuController shopMenu;
+        [Tooltip("Pantalla del plugin nativo de logs. Se arma con GunJump > UI > Setup Logs Screen.")]
+        [SerializeField] private LogsMenuController logsMenu;
 
         [Header("Layout")]
         [Tooltip("Distancia del botón de volver de la tienda a la esquina superior izquierda del área segura.")]
@@ -36,6 +40,8 @@ namespace GunJump.UI
             playButton.onClick.AddListener(PlayClicked);
             shopButton.onClick.AddListener(ShopClicked);
             shopBackButton.onClick.AddListener(ShopBackClicked);
+            logsButton.onClick.AddListener(LogsClicked);
+            logsBackButton.onClick.AddListener(LogsBackClicked);
 
             levelSelectMenu.Setup();
             shopMenu.Setup();
@@ -65,10 +71,21 @@ namespace GunJump.UI
             StartCoroutine(WaitForAnim("Play"));
         }
 
+        private void LogsClicked()
+        {
+            if(!picked)
+                StartCoroutine(WaitForAnim("Logs"));
+        }
+
+        private void LogsBackClicked()
+        {
+            if(!picked)
+                StartCoroutine(WaitForAnim("LogsBack"));
+        }
+
         private IEnumerator WaitForAnim(string key)
         {
             picked = true;
-            // Suena en el toque, no después de la espera de la animación.
             GameAudio.Play(SoundId.ButtonClick);
             yield return new WaitForSeconds(0.1f);
             ActivateKey(key);
@@ -83,7 +100,6 @@ namespace GunJump.UI
                     landingMenu.SetActive(false);
                     levelSelectMenu.gameObject.SetActive(true);
                     EventBus.Raise<HideMoneyCountEvent>();
-                    // Además libera el bundle de armas, que el nivel vuelve a abrir.
                     EventBus.Raise<HideGunPreviewEvent>();
                     break;
                 case "Shop":
@@ -97,10 +113,22 @@ namespace GunJump.UI
                     landingMenu.SetActive(true);
                     shopMenu.gameObject.SetActive(false);
                     break;
+                case "Logs":
+                    landingMenu.SetActive(false);
+                    logsMenu.gameObject.SetActive(true);
+                    logsMenu.WakeUp();
+                    EventBus.Raise<HideMoneyCountEvent>();
+                    EventBus.Raise<HideGunPreviewEvent>();
+                    break;
+                case "LogsBack":
+                    landingMenu.SetActive(true);
+                    logsMenu.gameObject.SetActive(false);
+                    EventBus.Raise<ShowMoneyCountEvent>();
+                    EventBus.Raise<ShowGunPreviewEvent>();
+                    break;
             }
         }
 
-        // Corre el botón para que no quede debajo del notch o de la cámara perforada (anchor y pivot arriba a la izquierda).
         private void KeepShopBackInSafeArea()
         {
             SafeAreaMath.Anchors(Screen.safeArea, Screen.width, Screen.height, out Vector2 anchorMin, out Vector2 anchorMax);

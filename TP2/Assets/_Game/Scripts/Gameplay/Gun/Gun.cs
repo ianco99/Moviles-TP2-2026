@@ -9,8 +9,7 @@ namespace GunJump.Gameplay
     [RequireComponent(typeof(Rigidbody))]
     public sealed class Gun : MonoBehaviour
     {
-        // El tope por defecto de Unity (7 rad/s) queda por debajo del giro del arma.
-        const float MaxAngularVelocity = 60f;
+        const float MAX_ANGULAR_VELOCITY = 60f;
 
         [SerializeField] GunTuning tuning;
         [Tooltip("El cañón apunta hacia el eje X local de este transform.")]
@@ -44,14 +43,11 @@ namespace GunJump.Gameplay
             body.constraints = RigidbodyConstraints.FreezePositionZ
                                | RigidbodyConstraints.FreezeRotationX
                                | RigidbodyConstraints.FreezeRotationY;
-            body.maxAngularVelocity = MaxAngularVelocity;
-            // El freno del giro lo maneja GunTuning.SpinDamping.
+            body.maxAngularVelocity = MAX_ANGULAR_VELOCITY;
             body.angularDamping = 0f;
-            // Un cuerpo dormido deja de recibir OnCollisionStay y el arma quieta no contaría como apoyada.
             body.sleepThreshold = 0f;
             strategy = fireStrategy;
 
-            // Lo que el arma trae dibujado (los cubos del prototipo) se oculta cuando llega el modelo equipado.
             Renderer[] placeholder = GetComponentsInChildren<Renderer>(true);
             customization = new GunCustomization(this, transform, muzzle, bulletSpawner, placeholder, modelRotation, modelLength);
             SubscribeToLevelLoad();
@@ -66,7 +62,6 @@ namespace GunJump.Gameplay
         }
 
 #if UNITY_EDITOR
-        // Para ajustar el modelo desde el Inspector en Play y ver el resultado en el momento.
         void OnValidate()
         {
             customization?.SetModelFit(modelRotation, modelLength);
@@ -80,7 +75,6 @@ namespace GunJump.Gameplay
             body.angularVelocity = angular;
         }
 
-        // Suena solo en el choque inicial y más fuerte cuanto más rápido venía.
         void OnCollisionEnter(Collision collision)
         {
             float speed = collision.relativeVelocity.magnitude;
@@ -102,7 +96,6 @@ namespace GunJump.Gameplay
             strategy = value;
         }
 
-        // Se viste con lo equipado. Lo llama solo al terminar de cargarse el nivel.
         public void ApplyLoadout(GunLoadout loadout, ContentLibrary content, System.Action onDone = null)
         {
             customization.Apply(loadout, content, onDone);
@@ -125,8 +118,6 @@ namespace GunJump.Gameplay
                 lastContactTime = float.NegativeInfinity;
             }
 
-            // El disparo fija el giro en vez de sumarlo: así un tiro con el arma dada vuelta
-            // siempre la endereza, venga girando como venga.
             Vector3 angular = body.angularVelocity;
             float direction = GunMath.RecoilSpinDirection(muzzle.right.x, angular.z);
             angular.z = direction * tuning.RecoilSpin * Mathf.Deg2Rad;
@@ -144,8 +135,6 @@ namespace GunJump.Gameplay
                 tuning.MaxSpeed);
         }
 
-        // Dando Play directo en una escena de nivel no pasó el Bootstrapper: no hay EventBus
-        // y el arma queda como viene en la escena.
         void SubscribeToLevelLoad()
         {
             ServiceProvider services = ServiceProvider.Instance;
@@ -157,7 +146,6 @@ namespace GunJump.Gameplay
             eventBus.Subscribe(levelLoadedCallback);
         }
 
-        // El nivel todavía está tapado por la pantalla de carga: la sostiene hasta que el arma está vestida.
         void OnLevelLoaded(in LevelSceneLoadedEvent e)
         {
             ServiceProvider services = ServiceProvider.Instance;

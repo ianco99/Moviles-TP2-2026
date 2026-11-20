@@ -11,7 +11,6 @@ namespace GunJump.Gameplay
         [SerializeField] int defaultCapacity = 16;
         [SerializeField] int maxSize = 64;
 
-        // Todas las balas creadas, estén en uso o en el pool, para poder cambiarles el modelo.
         readonly List<Bullet> bullets = new List<Bullet>();
         ObjectPool<Bullet> pool;
         Action<Bullet> release;
@@ -40,7 +39,6 @@ namespace GunJump.Gameplay
             pool.Get().Launch(position, direction);
         }
 
-        // Modelo de la bala equipada; null vuelve al dibujo del prefab.
         public void SetModel(GameObject modelPrefab)
         {
             model = modelPrefab;

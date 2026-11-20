@@ -18,8 +18,8 @@ namespace GunJump.Tests
         [Test]
         public void Execute_RunsTheCommand()
         {
-            var invoker = new CommandInvoker();
-            var command = new CountingCommand();
+            CommandInvoker invoker = new CommandInvoker();
+            CountingCommand command = new CountingCommand();
 
             invoker.Execute(command, 0f);
 
@@ -29,7 +29,7 @@ namespace GunJump.Tests
         [Test]
         public void Execute_DoesNotRecordUnlessAsked()
         {
-            var invoker = new CommandInvoker();
+            CommandInvoker invoker = new CommandInvoker();
 
             invoker.Execute(new CountingCommand(), 1f);
 
@@ -39,8 +39,8 @@ namespace GunJump.Tests
         [Test]
         public void Recording_StoresTimeRelativeToStart()
         {
-            var invoker = new CommandInvoker();
-            var command = new CountingCommand();
+            CommandInvoker invoker = new CommandInvoker();
+            CountingCommand command = new CountingCommand();
 
             invoker.StartRecording(10f);
             invoker.Execute(command, 10.5f);
@@ -58,7 +58,7 @@ namespace GunJump.Tests
         [Test]
         public void StartRecording_ClearsThePreviousOne()
         {
-            var invoker = new CommandInvoker();
+            CommandInvoker invoker = new CommandInvoker();
 
             invoker.StartRecording(0f);
             invoker.Execute(new CountingCommand(), 1f);

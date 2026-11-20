@@ -1,9 +1,23 @@
 namespace GunJump.Core
 {
-    // Los sistemas que viven toda la sesión. Lo arma GameBootstrap y SceneLoader se lo entrega a cada escena.
     public sealed class GameContext
     {
         readonly SaveSystem save;
+
+        readonly SceneLoader loader;
+        public SceneLoader Loader => loader;
+
+        readonly CommandInvoker commands;
+        public CommandInvoker Commands => commands;
+
+        readonly PlayerProgress progress;
+        public PlayerProgress Progress => progress;
+
+        readonly Economy economy;
+        public Economy Economy => economy;
+
+        readonly LevelCatalog levels;
+        public LevelCatalog Levels => levels;
 
         public GameContext(
             SceneLoader loader,
@@ -13,19 +27,13 @@ namespace GunJump.Core
             Economy economy,
             LevelCatalog levels)
         {
-            Loader = loader;
-            Commands = commands;
-            Progress = progress;
+            this.loader = loader;
+            this.commands = commands;
+            this.progress = progress;
             this.save = save;
-            Economy = economy;
-            Levels = levels;
+            this.economy = economy;
+            this.levels = levels;
         }
-
-        public SceneLoader Loader { get; }
-        public CommandInvoker Commands { get; }
-        public PlayerProgress Progress { get; }
-        public Economy Economy { get; }
-        public LevelCatalog Levels { get; }
 
         public void SaveProgress()
         {

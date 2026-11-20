@@ -3,7 +3,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Enemigo que no se mueve: muere de los impactos que indique su config y sale despedido.
     public sealed class StaticEnemy : Enemy
     {
         [Tooltip("Opcional. Si está asignado, el cuerpo sale despedido al morir.")]

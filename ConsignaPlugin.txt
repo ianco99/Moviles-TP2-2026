@@ -1,0 +1,38 @@
+Ejercicio de Plugin para Android
+
+Desarrollo de Juegos para Dispositivos Móviles
+
+
+
+Profesor: Rodrigo Corral
+
+
+
+Consigna
+
+El alumno deberá desarrollar e integrar un plugin que:
+
+Enviar todos los logs de unity. (Unity)
+Registre todos los logs enviados por el juego (Java)
+Guarde un archivo con dichos logs (Java)
+Se devuelven todos los logs cuando se solicitan. (Java)
+Muestre una pantalla con todos los logs hasta el momento enviados por el juego. (Unity)
+De la opción de limpiar ese archivo (Unity)
+Previo a borrar el archivo, debe mostrarse una alerta con la verificación para dicha acción. (Java)
+Todas estas acciones deben ser implementadas en forma nativa en Android, llamando solo desde unity a la funcionalidad de: enviar el log, solicitar todos los logs guardados y llamar a borrar logs.
+
+
+Versiones:
+
+Unity 6000.3.11f1 LTS
+Android Studio 2026.2.1
+
+
+Entrega
+
+Fecha de entrega: 25/10/2026
+
+Archivos de entrega: 
+
+Link a un repositorio con el proyecto. El repo tiene que contener ambos proyectos: el de Unity y el de Java.
+Un APK

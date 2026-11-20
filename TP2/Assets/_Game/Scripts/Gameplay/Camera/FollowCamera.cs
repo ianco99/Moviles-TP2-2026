@@ -2,21 +2,19 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Sigue al arma desde atrás y al costado, mirando hacia adelante. Ángulo y distancia salen de CameraTuning
-    // y se leen en cada frame, así que se pueden ajustar con el juego en Play.
     [RequireComponent(typeof(Camera))]
     public sealed class FollowCamera : MonoBehaviour
     {
         [SerializeField] CameraTuning tuning;
         [SerializeField] Transform target;
 
-        Camera cam;
+        Camera attachedCamera;
         Vector3 focus;
         Vector3 focusVelocity;
 
         void Awake()
         {
-            cam = GetComponent<Camera>();
+            attachedCamera = GetComponent<Camera>();
 
             if (target != null)
                 focus = GoalFocus();
@@ -43,10 +41,10 @@ namespace GunJump.Gameplay
             Quaternion rotation = CameraFraming.Rotation(tuning.Yaw, tuning.Pitch);
             transform.SetPositionAndRotation(CameraFraming.Position(focus, rotation, tuning.Distance), rotation);
 
-            if (cam.orthographic)
-                cam.orthographicSize = CameraFraming.OrthographicSize(tuning.VisibleWidth, cam.aspect);
+            if (attachedCamera.orthographic)
+                attachedCamera.orthographicSize = CameraFraming.OrthographicSize(tuning.VisibleWidth, attachedCamera.aspect);
             else
-                cam.fieldOfView = CameraFraming.VerticalFieldOfView(tuning.VisibleWidth, tuning.Distance, cam.aspect);
+                attachedCamera.fieldOfView = CameraFraming.VerticalFieldOfView(tuning.VisibleWidth, tuning.Distance, attachedCamera.aspect);
         }
     }
 }

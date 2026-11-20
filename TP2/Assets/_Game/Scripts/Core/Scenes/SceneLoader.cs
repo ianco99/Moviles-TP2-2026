@@ -4,25 +4,25 @@ using UnityEngine.SceneManagement;
 
 namespace GunJump.Core
 {
-    // Cambia de escena de contenido de forma asíncrona. La escena Boot queda siempre cargada;
-    // el contenido y la pantalla de carga entran y salen como escenas aditivas.
     public sealed class SceneLoader
     {
-        // Unity deja el progreso en 0.9 hasta que se permite activar la escena.
-        const float ReadyProgress = 0.9f;
+        const float READY_PROGRESS = 0.9f;
 
         readonly MonoBehaviour runner;
         readonly string loadingScene;
         GameContext context;
+
+        string current;
+        public string Current => current;
+
+        bool isLoading;
+        public bool IsLoading => isLoading;
 
         public SceneLoader(MonoBehaviour coroutineRunner, string loadingSceneName)
         {
             runner = coroutineRunner;
             loadingScene = loadingSceneName;
         }
-
-        public string Current { get; private set; }
-        public bool IsLoading { get; private set; }
 
         public void Bind(GameContext gameContext)
         {
@@ -39,8 +39,7 @@ namespace GunJump.Core
 
         IEnumerator LoadRoutine(string sceneName)
         {
-            IsLoading = true;
-            // Se puede llegar acá desde el menú de pausa, con el tiempo detenido.
+            isLoading = true;
             Time.timeScale = 1f;
 
             yield return SceneManager.LoadSceneAsync(loadingScene, LoadSceneMode.Additive);
@@ -50,16 +49,16 @@ namespace GunJump.Core
             if (Current != null)
             {
                 yield return SceneManager.UnloadSceneAsync(Current);
-                Current = null;
+                current = null;
             }
 
             yield return Resources.UnloadUnusedAssets();
 
             AsyncOperation load = SceneManager.LoadSceneAsync(sceneName, LoadSceneMode.Additive);
             load.allowSceneActivation = false;
-            while (load.progress < ReadyProgress)
+            while (load.progress < READY_PROGRESS)
             {
-                view?.SetProgress(load.progress / ReadyProgress);
+                view?.SetProgress(load.progress / READY_PROGRESS);
                 yield return null;
             }
 
@@ -70,21 +69,21 @@ namespace GunJump.Core
 
             Scene scene = SceneManager.GetSceneByName(sceneName);
             SceneManager.SetActiveScene(scene);
-            Current = sceneName;
+            current = sceneName;
 
             SceneEntryPoint entry = FindInScene<SceneEntryPoint>(scene);
             if (entry != null)
                 entry.Enter(context);
 
             yield return SceneManager.UnloadSceneAsync(loadingScene);
-            IsLoading = false;
+            isLoading = false;
         }
 
-        static T FindInScene<T>(Scene scene) where T : class
+        static ComponentType FindInScene<ComponentType>(Scene scene) where ComponentType : class
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                T found = root.GetComponentInChildren<T>(true);
+                ComponentType found = root.GetComponentInChildren<ComponentType>(true);
                 if (found != null)
                     return found;
             }

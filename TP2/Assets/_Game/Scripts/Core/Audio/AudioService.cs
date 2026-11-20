@@ -11,18 +11,16 @@ namespace GunJump.Core
     // clips ni fundidos. Vive toda la sesión en un objeto propio que no se va con ninguna escena.
     public sealed class AudioService : IService
     {
-        // Varias fuentes en ronda: el tono de un disparo no cambia el de los sonidos que siguen sonando.
-        const int SfxSourceCount = 4;
+        const int SFX_SOURCE_COUNT = 4;
 
-        // Lo que el jugador eligió queda guardado entre sesiones. Sin nada guardado, todo suena.
-        const string SfxEnabledKey = "Audio.Sfx";
-        const string MusicEnabledKey = "Audio.Music";
+        const string SFX_ENABLED_KEY = "Audio.Sfx";
+        const string MUSIC_ENABLED_KEY = "Audio.Music";
 
         readonly AudioLibrary library;
         readonly MonoBehaviour runner;
         readonly AudioListener listener;
         readonly AudioSource musicSource;
-        readonly AudioSource[] sfxSources = new AudioSource[SfxSourceCount];
+        readonly AudioSource[] sfxSources = new AudioSource[SFX_SOURCE_COUNT];
         readonly AudioLibrary.SoundEntry[] sounds;
         readonly List<AudioListener> sceneListeners = new List<AudioListener>(2);
         readonly EventBus.EventCallback<LevelLoadFinishedEvent> loadFinishedCallback;
@@ -39,8 +37,6 @@ namespace GunJump.Core
             runner = CoroutineHost.Create(nameof(AudioService));
             GameObject host = runner.gameObject;
 
-            // El único oído del juego: durante una carga la escena vieja ya se fue y la nueva todavía no llegó,
-            // y con el listener en una cámara de escena la música se cortaría.
             listener = host.AddComponent<AudioListener>();
 
             musicSource = AddSource(host);
@@ -52,8 +48,8 @@ namespace GunJump.Core
 
             sounds = BuildTable(audioLibrary);
 
-            sfxEnabled = ReadEnabled(SfxEnabledKey);
-            musicEnabled = ReadEnabled(MusicEnabledKey);
+            sfxEnabled = ReadEnabled(SFX_ENABLED_KEY);
+            musicEnabled = ReadEnabled(MUSIC_ENABLED_KEY);
             musicSource.mute = !musicEnabled;
 
             loadFinishedCallback = OnLevelLoadFinished;
@@ -76,9 +72,8 @@ namespace GunJump.Core
             if (channel == AudioChannel.Music)
             {
                 musicEnabled = enabled;
-                // Silenciada sigue avanzando: al volver a prenderla no arranca de cero ni corta un fundido.
                 musicSource.mute = !enabled;
-                WriteEnabled(MusicEnabledKey, enabled);
+                WriteEnabled(MUSIC_ENABLED_KEY, enabled);
                 return;
             }
 
@@ -89,7 +84,7 @@ namespace GunJump.Core
                     source.Stop();
             }
 
-            WriteEnabled(SfxEnabledKey, enabled);
+            WriteEnabled(SFX_ENABLED_KEY, enabled);
         }
 
         public void Play(SoundId id, float volumeScale = 1f)
@@ -137,7 +132,7 @@ namespace GunJump.Core
             foreach (SoundId id in System.Enum.GetValues(typeof(SoundId)))
                 size = Mathf.Max(size, (int)id + 1);
 
-            var table = new AudioLibrary.SoundEntry[size];
+            AudioLibrary.SoundEntry[] table = new AudioLibrary.SoundEntry[size];
             foreach (AudioLibrary.SoundEntry entry in audioLibrary.Sounds)
             {
                 int index = (int)entry.id;
@@ -148,8 +143,6 @@ namespace GunJump.Core
             return table;
         }
 
-        // Un frame después del arranque la escena inicial ya terminó de cargar: se puede leer cuál es
-        // y apagar el listener de su cámara si sceneLoaded no llegó a avisar.
         IEnumerator Begin()
         {
             yield return null;
@@ -196,7 +189,6 @@ namespace GunJump.Core
             PlayMusic(library.GetMusicFor(SceneManager.GetActiveScene().name));
         }
 
-        // Si el tema pedido ya es el que suena (reintentar un nivel, pasar al siguiente), sigue sin cortarse.
         void PlayMusic(AudioClip clip)
         {
             if (clip == targetMusic)
@@ -222,7 +214,6 @@ namespace GunJump.Core
             yield return FadeMusicTo(library.MusicVolume);
         }
 
-        // Con tiempo sin escalar: el fundido sigue aunque la carga o la pausa tengan el tiempo detenido.
         IEnumerator FadeMusicTo(float target)
         {
             float start = musicSource.volume;

@@ -3,23 +3,21 @@ using UnityEngine;
 
 namespace GunJump.UI
 {
-    // Muestra lo que le digan. Solo toca el texto cuando el valor cambia, así se la puede llamar en cada frame.
     public sealed class HudView : MonoBehaviour
     {
-        const int Unset = int.MinValue;
+        const int UNSET = int.MinValue;
 
         [SerializeField] TMP_Text ammoLabel;
         [SerializeField] TMP_Text coinsLabel;
         [SerializeField] TMP_Text enemiesLabel;
         [SerializeField] CommandButton pauseButton;
 
-        int shownAmmo = Unset;
-        int shownCoins = Unset;
-        int shownEnemies = Unset;
+        int shownAmmo = UNSET;
+        int shownCoins = UNSET;
+        int shownEnemies = UNSET;
 
         public CommandButton PauseButton => pauseButton;
 
-        // Con munición infinita el contador se oculta.
         public void SetAmmo(int ammo, bool infinite)
         {
             if (ammoLabel.gameObject.activeSelf == infinite)

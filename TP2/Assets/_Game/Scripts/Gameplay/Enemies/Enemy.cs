@@ -10,7 +10,9 @@ namespace GunJump.Gameplay
         LevelSession session;
         int health;
 
-        public bool IsDead { get; private set; }
+        bool isDead;
+        public bool IsDead => isDead;
+
         protected EnemyConfig Config => config;
 
         protected virtual void Awake()
@@ -39,7 +41,7 @@ namespace GunJump.Gameplay
                 return;
             }
 
-            IsDead = true;
+            isDead = true;
             GameAudio.Play(SoundId.EnemyDeath);
             session?.RegisterKill(config.CoinReward);
             OnDeath(hit);

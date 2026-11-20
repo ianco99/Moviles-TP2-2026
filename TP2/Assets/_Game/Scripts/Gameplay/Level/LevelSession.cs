@@ -9,26 +9,31 @@ namespace GunJump.Gameplay
         Lost
     }
 
-    // El estado de un intento: munición, monedas juntadas, bajas, multiplicador y tiempo.
     public sealed class LevelSession
     {
-        // Una munición de 0 o menos significa infinita.
-        public LevelSession(int ammo, int totalEnemies)
-        {
-            HasInfiniteAmmo = ammo <= 0;
-            Ammo = Math.Max(0, ammo);
-            TotalEnemies = totalEnemies;
-            Multiplier = 1;
-        }
+        LevelState state;
+        public LevelState State => state;
 
-        public LevelState State { get; private set; }
-        public bool HasInfiniteAmmo { get; }
-        public int Ammo { get; private set; }
-        public int Coins { get; private set; }
-        public int Kills { get; private set; }
-        public int TotalEnemies { get; }
-        public int Multiplier { get; private set; }
-        public float Elapsed { get; private set; }
+        readonly bool hasInfiniteAmmo;
+        public bool HasInfiniteAmmo => hasInfiniteAmmo;
+
+        int ammo;
+        public int Ammo => ammo;
+
+        int coins;
+        public int Coins => coins;
+
+        int kills;
+        public int Kills => kills;
+
+        readonly int totalEnemies;
+        public int TotalEnemies => totalEnemies;
+
+        int multiplier;
+        public int Multiplier => multiplier;
+
+        float elapsed;
+        public float Elapsed => elapsed;
 
         public bool IsPlaying => State == LevelState.Playing;
         public bool CanFire => IsPlaying && (HasInfiniteAmmo || Ammo > 0);
@@ -36,16 +41,24 @@ namespace GunJump.Gameplay
         public int EnemiesRemaining => TotalEnemies - Kills;
         public bool AllEnemiesKilled => Kills >= TotalEnemies;
 
+        public LevelSession(int ammo, int totalEnemies)
+        {
+            hasInfiniteAmmo = ammo <= 0;
+            this.ammo = Math.Max(0, ammo);
+            this.totalEnemies = totalEnemies;
+            multiplier = 1;
+        }
+
         public void Tick(float deltaTime)
         {
             if (IsPlaying)
-                Elapsed += deltaTime;
+                elapsed += deltaTime;
         }
 
         public void ConsumeAmmo()
         {
             if (!HasInfiniteAmmo && Ammo > 0)
-                Ammo--;
+                ammo--;
         }
 
         public void RegisterKill(int coins)
@@ -53,33 +66,32 @@ namespace GunJump.Gameplay
             if (!IsPlaying)
                 return;
 
-            Kills++;
-            Coins += coins;
+            kills++;
+            this.coins += coins;
         }
 
         public void AddCoins(int coins)
         {
             if (IsPlaying)
-                Coins += coins;
+                this.coins += coins;
         }
 
-        // Cuenta el multiplicador más alto que se haya acertado.
         public void RegisterMultiplier(int value)
         {
             if (IsPlaying)
-                Multiplier = Math.Max(Multiplier, value);
+                multiplier = Math.Max(multiplier, value);
         }
 
         public void Win()
         {
             if (IsPlaying)
-                State = LevelState.Won;
+                state = LevelState.Won;
         }
 
         public void Lose()
         {
             if (IsPlaying)
-                State = LevelState.Lost;
+                state = LevelState.Lost;
         }
     }
 }

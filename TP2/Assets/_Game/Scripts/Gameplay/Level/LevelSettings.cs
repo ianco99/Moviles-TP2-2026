@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    // Los datos propios de cada nivel. Vive en el prefab LevelCore y cada escena pisa sus valores.
     public sealed class LevelSettings : MonoBehaviour
     {
         [Tooltip("Balas disponibles. 0 es munición infinita.")]

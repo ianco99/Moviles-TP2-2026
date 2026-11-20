@@ -4,15 +4,15 @@ namespace GunJump.Core
     {
         readonly PlayerProgress progress;
 
+        readonly EconomyConfig config;
+        public EconomyConfig Config => config;
+
         public Economy(PlayerProgress progress, EconomyConfig config)
         {
             this.progress = progress;
-            Config = config;
+            this.config = config;
         }
 
-        public EconomyConfig Config { get; }
-
-        // Registra el resultado del nivel y acredita las monedas. Devuelve cuántas se acreditaron.
         public int GrantLevelReward(string levelId, int levelCoins, int multiplier, int stars, int score)
         {
             bool firstClear = progress.RecordLevel(levelId, stars, score);

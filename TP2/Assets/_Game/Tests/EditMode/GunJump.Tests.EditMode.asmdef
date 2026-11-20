@@ -6,6 +6,7 @@
         "GunJump.Gameplay",
         "GunJump.UI",
         "GunJump.Economy",
+        "GunJump.Platform",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"
     ],
