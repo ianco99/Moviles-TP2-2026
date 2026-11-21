@@ -6,15 +6,15 @@ using GunJump.Platform;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace _Game.Scripts.Bootstrap
 {
     [DefaultExecutionOrder(-100)]
     public class Bootstrapper : MonoBehaviour
     {
-        //TODO: Remove once levels pay into the wallet
-        [Tooltip("Monedas con las que arranca una partida nueva. Solo se dan si todavía no hay billetera guardada.")]
-        [SerializeField] private double startingMoney;
+        private const int TARGET_FRAME_RATE = 60;
+
         [SerializeField] private ShopCatalog catalog;
         [Tooltip("Escena de la pantalla de carga entre el menú y los niveles. Tiene que estar en Build Settings.")]
         [SerializeField] private string loadingScene = "Loading";
@@ -23,6 +23,8 @@ namespace _Game.Scripts.Bootstrap
 
         private void Awake()
         {
+            Application.targetFrameRate = TARGET_FRAME_RATE;
+
             ServiceProvider services = ServiceProvider.Instance;
 
             if (!services.ContainsService<MobilePlatform>())
@@ -71,20 +73,41 @@ namespace _Game.Scripts.Bootstrap
             PlayerWalletManager wallet = new PlayerWalletManager();
             PlayerInventoryManager inventory = new PlayerInventoryManager(catalog);
             PlayerEquipment equipment = new PlayerEquipment(catalog);
+            PlayerLevelProgress levelProgress = new PlayerLevelProgress();
 
-            EconomySave save = new EconomySave(wallet, inventory);
-
-            if (!save.Load())
-            {
-                wallet.AddMoney(startingMoney);
-            }
+            EconomySave save = new EconomySave(wallet, inventory, levelProgress);
+            save.Load();
 
             OwnEquippedItems(equipment, inventory);
 
             services.AddService<PlayerWalletManager>(wallet);
             services.AddService<PlayerInventoryManager>(inventory);
             services.AddService<PlayerEquipment>(equipment);
+            services.AddService<PlayerLevelProgress>(levelProgress);
         }
+
+#if UNITY_EDITOR
+        private void Start()
+        {
+            string requestedScenePath = UnityEditor.SessionState.GetString(LevelLoader.EDITOR_START_SCENE_KEY, string.Empty);
+
+            if (string.IsNullOrEmpty(requestedScenePath))
+            {
+                return;
+            }
+
+            UnityEditor.SessionState.EraseString(LevelLoader.EDITOR_START_SCENE_KEY);
+            int buildIndex = SceneUtility.GetBuildIndexByScenePath(requestedScenePath);
+
+            if (buildIndex < 0)
+            {
+                Debug.LogWarning($"Bootstrapper: {requestedScenePath} no está en Build Settings; se queda en el menú.", this);
+                return;
+            }
+
+            ServiceProvider.Instance.GetService<LevelLoader>().Load(buildIndex);
+        }
+#endif
 
         private static void OwnEquippedItems(PlayerEquipment equipment, PlayerInventoryManager inventory)
         {

@@ -10,14 +10,16 @@ namespace GunJump.UI
         public readonly int Stars;
         public readonly int Coins;
         public readonly int Multiplier;
+        public readonly int Score;
         public readonly bool HasNext;
 
-        public ResultData(bool won, int stars, int coins, int multiplier, bool hasNext)
+        public ResultData(bool won, int stars, int coins, int multiplier, int score, bool hasNext)
         {
             Won = won;
             Stars = stars;
             Coins = coins;
             Multiplier = multiplier;
+            Score = score;
             HasNext = hasNext;
         }
     }
@@ -28,15 +30,20 @@ namespace GunJump.UI
         [SerializeField] TMP_Text titleLabel;
         [SerializeField] TMP_Text coinsLabel;
         [SerializeField] TMP_Text multiplierLabel;
+        [SerializeField] TMP_Text scoreLabel;
         [SerializeField] GameObject starsRow;
         [SerializeField] Graphic[] stars;
         [SerializeField] Color starOn = new Color(1f, 0.82f, 0.2f);
         [SerializeField] Color starOff = new Color(1f, 1f, 1f, 0.2f);
         [SerializeField] CommandButton nextButton;
         [SerializeField] CommandButton retryButton;
+        [SerializeField] CommandButton menuButton;
+        [SerializeField] CommandButton shopButton;
 
         public CommandButton NextButton => nextButton;
         public CommandButton RetryButton => retryButton;
+        public CommandButton MenuButton => menuButton;
+        public CommandButton ShopButton => shopButton;
 
         public void Hide()
         {
@@ -54,10 +61,12 @@ namespace GunJump.UI
 
             coinsLabel.gameObject.SetActive(data.Won);
             multiplierLabel.gameObject.SetActive(data.Won);
+            scoreLabel.gameObject.SetActive(data.Won);
             if (data.Won)
             {
                 coinsLabel.SetText("+{0} monedas", data.Coins);
                 multiplierLabel.SetText("Multiplicador x{0}", data.Multiplier);
+                scoreLabel.SetText("Puntaje {0}", data.Score);
             }
 
             nextButton.gameObject.SetActive(data.HasNext);

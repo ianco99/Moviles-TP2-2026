@@ -14,6 +14,7 @@ namespace GunJump.UI
     {
         [Header("Buttons")]
         [SerializeField] private Button playButton;
+        [SerializeField] private Button levelsBackButton;
         [SerializeField] private Button shopButton;
         [SerializeField] private Button shopBackButton;
         [SerializeField] private Button logsButton;
@@ -32,12 +33,15 @@ namespace GunJump.UI
 
         private bool picked = false;
         private EventBus eventBus;
+        private LevelLoader levelLoader;
 
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
+        private LevelLoader LevelLoader => levelLoader ??= ServiceProvider.Instance.GetService<LevelLoader>();
 
         private void Awake()
         {
             playButton.onClick.AddListener(PlayClicked);
+            levelsBackButton.onClick.AddListener(LevelsBackClicked);
             shopButton.onClick.AddListener(ShopClicked);
             shopBackButton.onClick.AddListener(ShopBackClicked);
             logsButton.onClick.AddListener(LogsClicked);
@@ -51,6 +55,20 @@ namespace GunJump.UI
         {
             EventBus.Raise<ShowMoneyCountEvent>();
             EventBus.Raise<ShowGunPreviewEvent>();
+            OpenRequestedScreen();
+        }
+
+        private void OpenRequestedScreen()
+        {
+            switch (LevelLoader.TakeRequestedMenuScreen())
+            {
+                case MenuScreen.LevelSelect:
+                    ActivateKey("Play");
+                    break;
+                case MenuScreen.Shop:
+                    ActivateKey("Shop");
+                    break;
+            }
         }
 
         private void ShopClicked()
@@ -69,6 +87,12 @@ namespace GunJump.UI
         {
             if(!picked)
             StartCoroutine(WaitForAnim("Play"));
+        }
+
+        private void LevelsBackClicked()
+        {
+            if(!picked)
+                StartCoroutine(WaitForAnim("LevelsBack"));
         }
 
         private void LogsClicked()
@@ -101,6 +125,12 @@ namespace GunJump.UI
                     levelSelectMenu.gameObject.SetActive(true);
                     EventBus.Raise<HideMoneyCountEvent>();
                     EventBus.Raise<HideGunPreviewEvent>();
+                    break;
+                case "LevelsBack":
+                    landingMenu.SetActive(true);
+                    levelSelectMenu.gameObject.SetActive(false);
+                    EventBus.Raise<ShowMoneyCountEvent>();
+                    EventBus.Raise<ShowGunPreviewEvent>();
                     break;
                 case "Shop":
                     landingMenu.SetActive(false);

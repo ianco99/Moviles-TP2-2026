@@ -7,9 +7,11 @@ namespace GunJump.UI
         [SerializeField] GameObject panel;
         [SerializeField] CommandButton resumeButton;
         [SerializeField] CommandButton retryButton;
+        [SerializeField] CommandButton menuButton;
 
         public CommandButton ResumeButton => resumeButton;
         public CommandButton RetryButton => retryButton;
+        public CommandButton MenuButton => menuButton;
 
         public void Show(bool visible)
         {

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ac2a2a5da673d4742b4a05420d8e14f8, type: 3}
+  m_Name: WeaponCatalog
+  m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.WeaponCatalog
+  entries:
+  - gun: {fileID: 11400000, guid: e59396299c02869cc9a435308d3959ea, type: 2}
+    strategy: {fileID: 11400000, guid: 0b2058212b121d5479b80b04adeb9df8, type: 2}
+  - gun: {fileID: 11400000, guid: 54a2fb0185955ea7d859806eb2af69dc, type: 2}
+    strategy: {fileID: 11400000, guid: e66838f3928695c4fbe23ad6b95db2ed, type: 2}
+  - gun: {fileID: 11400000, guid: e211007858c268702b1a7cc87a2e7fe2, type: 2}
+    strategy: {fileID: 11400000, guid: 0b2058212b121d5479b80b04adeb9df8, type: 2}
+  - gun: {fileID: 11400000, guid: 6cce1a77ff07c89ad8ad670869dca600, type: 2}
+    strategy: {fileID: 11400000, guid: f707da81e83d6b045b3fdae1e6d24e3d, type: 2}
+  - gun: {fileID: 11400000, guid: 0dfef253fbf17e0ba8a8711321ade962, type: 2}
+    strategy: {fileID: 11400000, guid: 01058b65999c4f1418c792598d1e71b2, type: 2}
+  - gun: {fileID: 11400000, guid: 2f1fb75d3d4e4625193e7ea8523e5d10, type: 2}
+    strategy: {fileID: 11400000, guid: e66838f3928695c4fbe23ad6b95db2ed, type: 2}
+  - gun: {fileID: 11400000, guid: ee5fbc1ad38380035b052bd71387a3b5, type: 2}
+    strategy: {fileID: 11400000, guid: f707da81e83d6b045b3fdae1e6d24e3d, type: 2}
+  - gun: {fileID: 11400000, guid: 24675a3cd431dddf884a7cf54f496b3b, type: 2}
+    strategy: {fileID: 11400000, guid: e66838f3928695c4fbe23ad6b95db2ed, type: 2}
+  fallbackStrategy: {fileID: 11400000, guid: f707da81e83d6b045b3fdae1e6d24e3d, type: 2}

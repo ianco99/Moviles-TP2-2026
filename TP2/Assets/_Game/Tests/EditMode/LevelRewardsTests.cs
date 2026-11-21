@@ -41,15 +41,5 @@ namespace GunJump.Tests
         {
             Assert.AreEqual(900, LevelRewards.Score(90, 1, 60f, 35f, 10, 10));
         }
-
-        [Test]
-        public void Catalog_NextAfter()
-        {
-            string[] names = { "Level1", "Level2", "Level3" };
-
-            Assert.AreEqual("Level2", LevelCatalog.NextAfter(names, "Level1"));
-            Assert.IsNull(LevelCatalog.NextAfter(names, "Level3"));
-            Assert.IsNull(LevelCatalog.NextAfter(names, "Menu"));
-        }
     }
 }

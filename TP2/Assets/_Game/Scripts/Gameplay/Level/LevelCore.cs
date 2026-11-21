@@ -1,32 +1,54 @@
+using _Game.Scripts.Economy;
 using GunJump.Core;
 using GunJump.UI;
+using ianco99.ToolBox.Services;
 using UnityEngine;
 
 namespace GunJump.Gameplay
 {
-    public sealed class LevelCore : SceneEntryPoint
+    public sealed class LevelCore : MonoBehaviour
     {
+        const int NO_NEXT_LEVEL = -1;
+
         [SerializeField] LevelSettings settings;
         [SerializeField] LevelRules rules;
+        [Tooltip("Valor de las monedas, bonus del primer paso y puntos.")]
+        [SerializeField] EconomyConfig economy;
+        [Tooltip("Orden de los niveles. De acá sale a qué escena lleva el botón de siguiente nivel.")]
+        [SerializeField] LevelListSO levels;
+        [Tooltip("Índice del menú principal en Build Settings.")]
+        [SerializeField] int menuBuildIndex;
         [SerializeField] Gun gun;
         [SerializeField] InputReader input;
         [SerializeField] HudView hud;
         [SerializeField] PauseView pauseView;
         [SerializeField] ResultView resultView;
 
-        GameContext context;
+        readonly CommandInvoker commands = new CommandInvoker();
         LevelSession session;
         Transform gunTransform;
-        string levelId;
-        string nextLevel;
+        string levelID;
+        int nextLevelBuildIndex;
         float outOfAmmoTime;
         bool finished;
 
-        public override void Enter(GameContext gameContext)
+        LevelLoader LevelLoader => ServiceProvider.Instance.GetService<LevelLoader>();
+        PlayerWalletManager Wallet => ServiceProvider.Instance.GetService<PlayerWalletManager>();
+        PlayerLevelProgress LevelProgress => ServiceProvider.Instance.GetService<PlayerLevelProgress>();
+
+        bool HasNextLevel => nextLevelBuildIndex != NO_NEXT_LEVEL;
+
+        void Start()
         {
-            context = gameContext;
-            levelId = gameObject.scene.name;
-            nextLevel = context.Levels.NextAfter(levelId);
+            if (!HasServices())
+            {
+                Debug.LogError("LevelCore: faltan los servicios del juego. Arrancá desde MainMenu o activá GunJump > Play From Boot.", this);
+                enabled = false;
+                return;
+            }
+
+            levelID = gameObject.scene.name;
+            nextLevelBuildIndex = FindNextLevel(gameObject.scene.buildIndex);
             gunTransform = gun.transform;
 
             Enemy[] enemies = FindObjectsByType<Enemy>(FindObjectsSortMode.None);
@@ -35,9 +57,8 @@ namespace GunJump.Gameplay
             foreach (Enemy enemy in enemies)
                 enemy.Bind(session);
 
-            int coinValue = context.Economy.Config.CoinPickupValue;
             foreach (CoinPickup coin in FindObjectsByType<CoinPickup>(FindObjectsSortMode.None))
-                coin.Bind(session, coinValue);
+                coin.Bind(session, economy.CoinPickupValue);
 
             foreach (MultiplierTarget target in FindObjectsByType<MultiplierTarget>(FindObjectsSortMode.None))
                 target.Bind(session);
@@ -54,17 +75,21 @@ namespace GunJump.Gameplay
 
         void BindCommands()
         {
-            CommandInvoker commands = context.Commands;
-            LoadSceneCommand retry = new LoadSceneCommand(context.Loader, levelId);
+            LevelLoader loader = LevelLoader;
+            RestartSceneCommand retry = new RestartSceneCommand(loader);
+            LoadMenuCommand toLevelSelect = new LoadMenuCommand(loader, menuBuildIndex, MenuScreen.LevelSelect);
 
             input.Init(commands, new FireCommand(gun, session));
             hud.PauseButton.Bind(commands, new SetPausedCommand(this, true));
             pauseView.ResumeButton.Bind(commands, new SetPausedCommand(this, false));
             pauseView.RetryButton.Bind(commands, retry);
+            pauseView.MenuButton.Bind(commands, toLevelSelect);
             resultView.RetryButton.Bind(commands, retry);
+            resultView.MenuButton.Bind(commands, toLevelSelect);
+            resultView.ShopButton.Bind(commands, new LoadMenuCommand(loader, menuBuildIndex, MenuScreen.Shop));
 
-            if (nextLevel != null)
-                resultView.NextButton.Bind(commands, new LoadSceneCommand(context.Loader, nextLevel));
+            if (HasNextLevel)
+                resultView.NextButton.Bind(commands, new LoadSceneCommand(loader, nextLevelBuildIndex));
         }
 
         void Update()
@@ -92,6 +117,23 @@ namespace GunJump.Gameplay
             pauseView.Show(paused);
         }
 
+        static bool HasServices()
+        {
+            ServiceProvider services = ServiceProvider.Instance;
+            return services.ContainsService<LevelLoader>()
+                   && services.ContainsService<PlayerWalletManager>()
+                   && services.ContainsService<PlayerLevelProgress>();
+        }
+
+        int FindNextLevel(int buildIndex)
+        {
+            int position = levels.levelBuildIDs.IndexOf(buildIndex);
+            if (position < 0 || position + 1 >= levels.levelBuildIDs.Count)
+                return NO_NEXT_LEVEL;
+
+            return levels.levelBuildIDs[position + 1];
+        }
+
         bool RanOutOfAmmo()
         {
             if (!session.IsOutOfAmmo)
@@ -114,25 +156,26 @@ namespace GunJump.Gameplay
             bool won = session.State == LevelState.Won;
             GameAudio.Play(won ? SoundId.LevelWin : SoundId.LevelLose);
             int stars = 0;
+            int score = 0;
             int reward = 0;
 
             if (won)
             {
-                EconomyConfig config = context.Economy.Config;
                 stars = LevelRewards.Stars(session.AllEnemiesKilled, session.Elapsed, settings.TargetTime);
-                int score = LevelRewards.Score(
+                score = LevelRewards.Score(
                     session.Coins,
                     session.Multiplier,
                     session.Elapsed,
                     settings.TargetTime,
-                    config.PointsPerCoin,
-                    config.PointsPerSecondSaved);
+                    economy.PointsPerCoin,
+                    economy.PointsPerSecondSaved);
 
-                reward = context.Economy.GrantLevelReward(levelId, session.Coins, session.Multiplier, stars, score);
-                context.SaveProgress();
+                bool isFirstClear = LevelProgress.Record(levelID, stars, score);
+                reward = LevelRewards.Coins(session.Coins, session.Multiplier, isFirstClear ? economy.FirstClearBonus : 0);
+                Wallet.AddMoney(reward);
             }
 
-            resultView.Show(new ResultData(won, stars, reward, session.Multiplier, won && nextLevel != null));
+            resultView.Show(new ResultData(won, stars, reward, session.Multiplier, score, won && HasNextLevel));
         }
     }
 }

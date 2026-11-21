@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using _Game.Scripts.Shop;
 using GunJump.Core;
 using GunJump.Gameplay;
 using GunJump.UI;
@@ -8,6 +9,7 @@ using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -18,22 +20,33 @@ namespace GunJump.EditorTools
     public static class GameSceneBuilder
     {
         public const string SCENES_FOLDER = ROOT + "/Scenes";
-        public const string BOOT_SCENE_PATH = SCENES_FOLDER + "/Boot.unity";
+        public const string MAIN_MENU_SCENE_PATH = SCENES_FOLDER + "/MainMenu.unity";
         public const string LOADING_SCENE_PATH = SCENES_FOLDER + "/Loading.unity";
 
         const string ROOT = "Assets/_Game";
         const string LEVEL1_SCENE_PATH = SCENES_FOLDER + "/Level1.unity";
         const string PROTOTYPE_SCENE_PATH = SCENES_FOLDER + "/Prototype.unity";
         const string LEVEL_CORE_PREFAB_PATH = ROOT + "/Prefabs/Level/LevelCore.prefab";
+        const string GUN_RIG_PREFAB_PATH = ROOT + "/Prefabs/Gun/GunRig.prefab";
+        const string ENEMY_PREFAB_PATH = ROOT + "/Prefabs/Level/Enemy.prefab";
+        const string COIN_PREFAB_PATH = ROOT + "/Prefabs/Level/Coin.prefab";
+        const string FINISH_PREFAB_PATH = ROOT + "/Prefabs/Level/Finish.prefab";
+        const string MULTIPLIER_WALL_PREFAB_PATH = ROOT + "/Prefabs/Level/MultiplierWall.prefab";
+        const string PLATFORM_PREFAB_PATH = ROOT + "/Prefabs/Level/Platform.prefab";
         const string BULLET_PREFAB_PATH = ROOT + "/Prefabs/Bullets/Bullet.prefab";
 
         const string GUN_TUNING_PATH = ROOT + "/Data/Tuning/GunTuning.asset";
         const string CAMERA_TUNING_PATH = ROOT + "/Data/Tuning/CameraTuning.asset";
         const string LEVEL_RULES_PATH = ROOT + "/Data/Tuning/LevelRules.asset";
         const string ECONOMY_CONFIG_PATH = ROOT + "/Data/Tuning/EconomyConfig.asset";
-        const string LEVEL_CATALOG_PATH = ROOT + "/Data/Levels/LevelCatalog.asset";
+        const string LEVEL_LIST_PATH = ROOT + "/Data/Menu/LevelListSO.asset";
+        const string SHOP_CATALOG_PATH = ROOT + "/Data/Shop/ShopCatalog.asset";
         const string BULLET_CONFIG_PATH = ROOT + "/Data/Weapons/PistolBullet.asset";
         const string SINGLE_SHOT_PATH = ROOT + "/Data/Weapons/SingleShot.asset";
+        const string HEAVY_SHOT_PATH = ROOT + "/Data/Weapons/HeavyShot.asset";
+        const string SPREAD_SHOT_PATH = ROOT + "/Data/Weapons/SpreadShot.asset";
+        const string BURST_SHOT_PATH = ROOT + "/Data/Weapons/BurstShot.asset";
+        const string WEAPON_CATALOG_PATH = ROOT + "/Data/Weapons/WeaponCatalog.asset";
         const string ENEMY_CONFIG_PATH = ROOT + "/Data/Enemies/StaticEnemy.asset";
 
         const string GROUND_MATERIAL = "Proto_Ground";
@@ -47,7 +60,23 @@ namespace GunJump.EditorTools
 
         const float DEPTH = 8f;
         const int MULTIPLIER_STEPS = 5;
+        const float HEAVY_SHOT_RECOIL = 11f;
 
+        static readonly string[] SPREAD_GUN_IDS = { "Guns_Shotgun" };
+        static readonly string[] BURST_GUN_IDS = { "Guns_BurstPistol", "Guns_MachineGun" };
+        static readonly string[] HEAVY_GUN_IDS = { "Guns_Sniper", "Guns_SingleCannon", "Guns_GrenadeLauncher" };
+        static readonly string[] LEVEL_PREFAB_PATHS =
+        {
+            ENEMY_PREFAB_PATH,
+            COIN_PREFAB_PATH,
+            FINISH_PREFAB_PATH,
+            MULTIPLIER_WALL_PREFAB_PATH,
+            PLATFORM_PREFAB_PATH
+        };
+
+        static readonly Vector3 PLATFORM_SIZE = new Vector3(4f, 1f, DEPTH);
+        static readonly Vector2 BUTTON_SIZE = new Vector2(600f, 150f);
+        static readonly Vector2 HALF_BUTTON_SIZE = new Vector2(290f, 150f);
         static readonly Color HUD_TEXT_COLOR = new Color(0.1f, 0.1f, 0.15f);
         static readonly Color SKY_COLOR = new Color(0.62f, 0.8f, 0.92f);
         static readonly Color LOADING_COLOR = new Color(0.1f, 0.12f, 0.18f);
@@ -57,43 +86,59 @@ namespace GunJump.EditorTools
         [MenuItem("GunJump/Build/All (first time)")]
         public static void BuildAll()
         {
-            if (!CanBuild(LEVEL_CORE_PREFAB_PATH, BOOT_SCENE_PATH, LOADING_SCENE_PATH, LEVEL1_SCENE_PATH))
+            List<string> outputs = new List<string>(LEVEL_PREFAB_PATHS) { GUN_RIG_PREFAB_PATH, LEVEL_CORE_PREFAB_PATH, LEVEL1_SCENE_PATH };
+            if (!CanBuild(outputs.ToArray()))
                 return;
 
             EnsureData();
+            BuildGunRigPrefab();
+            BuildLevelPrefabs();
             BuildLevelCorePrefab();
-            BuildBootScene();
-            BuildLoadingScene();
             BuildLevel1Scene();
-            UpdateBuildSettings();
+            RegisterLevels();
             AssetDatabase.SaveAssets();
-            Debug.Log("GunJump: prefab LevelCore y escenas Boot, Loading y Level1 creados.");
+            Debug.Log("GunJump: GunRig, prefabs de nivel, LevelCore y Level1 creados; Level1 quedó en Build Settings y en LevelListSO.");
+        }
+
+        [MenuItem("GunJump/Build/Gun Rig (from Prototype)")]
+        public static void BuildGunRigOnly()
+        {
+            if (!CanBuild(GUN_RIG_PREFAB_PATH))
+                return;
+
+            EnsureData();
+            BuildGunRigPrefab();
+            AssetDatabase.SaveAssets();
+            Debug.Log($"GunJump: {GUN_RIG_PREFAB_PATH} copiado del arma de Prototype.");
+        }
+
+        [MenuItem("GunJump/Build/Level Prefabs")]
+        public static void BuildLevelPrefabsOnly()
+        {
+            if (!CanBuild(LEVEL_PREFAB_PATHS))
+                return;
+
+            EnsureData();
+            BuildLevelPrefabs();
+            AssetDatabase.SaveAssets();
+            Debug.Log("GunJump: prefabs Enemy, Coin, Finish, MultiplierWall y Platform creados en Prefabs/Level.");
         }
 
         [MenuItem("GunJump/Build/LevelCore Prefab")]
         public static void BuildLevelCoreOnly()
         {
+            if (!File.Exists(GUN_RIG_PREFAB_PATH))
+            {
+                EditorUtility.DisplayDialog("GunJump", "Primero hay que crear el GunRig (GunJump > Build > Gun Rig (from Prototype)).", "Entendido");
+                return;
+            }
+
             if (!CanBuild(LEVEL_CORE_PREFAB_PATH))
                 return;
 
             string previous = SceneManager.GetActiveScene().path;
             EnsureData();
             BuildLevelCorePrefab();
-            AssetDatabase.SaveAssets();
-            Reopen(previous);
-        }
-
-        [MenuItem("GunJump/Build/Boot and Loading Scenes")]
-        public static void BuildBootAndLoadingOnly()
-        {
-            if (!CanBuild(BOOT_SCENE_PATH, LOADING_SCENE_PATH))
-                return;
-
-            string previous = SceneManager.GetActiveScene().path;
-            EnsureData();
-            BuildBootScene();
-            BuildLoadingScene();
-            UpdateBuildSettings();
             AssetDatabase.SaveAssets();
             Reopen(previous);
         }
@@ -115,18 +160,18 @@ namespace GunJump.EditorTools
         [MenuItem("GunJump/Build/Level 1 Scene")]
         public static void BuildLevel1Only()
         {
-            if (!CanBuild(LEVEL1_SCENE_PATH))
-                return;
-
-            if (!File.Exists(LEVEL_CORE_PREFAB_PATH))
+            if (!File.Exists(LEVEL_CORE_PREFAB_PATH) || !File.Exists(ENEMY_PREFAB_PATH))
             {
-                EditorUtility.DisplayDialog("GunJump", "Primero hay que crear el prefab LevelCore (GunJump > Build > LevelCore Prefab).", "Entendido");
+                EditorUtility.DisplayDialog("GunJump", "Primero hay que crear el prefab LevelCore y los prefabs de nivel (GunJump > Build > All).", "Entendido");
                 return;
             }
 
+            if (!CanBuild(LEVEL1_SCENE_PATH))
+                return;
+
             EnsureData();
             BuildLevel1Scene();
-            UpdateBuildSettings();
+            RegisterLevels();
             AssetDatabase.SaveAssets();
         }
 
@@ -179,19 +224,10 @@ namespace GunJump.EditorTools
             LoadOrCreate<CameraTuning>(CAMERA_TUNING_PATH);
             LoadOrCreate<LevelRules>(LEVEL_RULES_PATH);
             LoadOrCreate<EconomyConfig>(ECONOMY_CONFIG_PATH);
-            LoadOrCreate<SingleShot>(SINGLE_SHOT_PATH);
             LoadOrCreate<EnemyConfig>(ENEMY_CONFIG_PATH);
             BulletConfig bulletConfig = LoadOrCreate<BulletConfig>(BULLET_CONFIG_PATH);
 
-            LevelCatalog catalog = LoadOrCreate<LevelCatalog>(LEVEL_CATALOG_PATH);
-            if (catalog.Count == 0)
-            {
-                SerializedObject serialized = new SerializedObject(catalog);
-                SerializedProperty names = serialized.FindProperty("sceneNames");
-                names.arraySize = 1;
-                names.GetArrayElementAtIndex(0).stringValue = Path.GetFileNameWithoutExtension(LEVEL1_SCENE_PATH);
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-            }
+            EnsureWeapons();
 
             EnsureMaterial(GROUND_MATERIAL, new Color(0.55f, 0.6f, 0.65f));
             EnsureMaterial(GUN_MATERIAL, new Color(0.15f, 0.15f, 0.18f));
@@ -208,6 +244,53 @@ namespace GunJump.EditorTools
             AssetDatabase.SaveAssets();
         }
 
+        static void EnsureWeapons()
+        {
+            SingleShot singleShot = LoadOrCreate<SingleShot>(SINGLE_SHOT_PATH);
+
+            bool hasHeavyShot = File.Exists(HEAVY_SHOT_PATH);
+            SingleShot heavyShot = LoadOrCreate<SingleShot>(HEAVY_SHOT_PATH);
+            if (!hasHeavyShot)
+                SetFloat(heavyShot, "recoil", HEAVY_SHOT_RECOIL);
+
+            SpreadShot spreadShot = LoadOrCreate<SpreadShot>(SPREAD_SHOT_PATH);
+            BurstShot burstShot = LoadOrCreate<BurstShot>(BURST_SHOT_PATH);
+
+            if (File.Exists(WEAPON_CATALOG_PATH))
+                return;
+
+            WeaponCatalog weapons = LoadOrCreate<WeaponCatalog>(WEAPON_CATALOG_PATH);
+            IReadOnlyList<ShopItem> guns = Load<ShopCatalog>(SHOP_CATALOG_PATH).GetItems(ShopCategory.Guns);
+
+            SerializedObject serialized = new SerializedObject(weapons);
+            SerializedProperty entries = serialized.FindProperty("entries");
+            entries.arraySize = guns.Count;
+
+            for (int i = 0; i < guns.Count; i++)
+            {
+                SerializedProperty entry = entries.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("gun").objectReferenceValue = guns[i];
+                entry.FindPropertyRelative("strategy").objectReferenceValue = DefaultStrategyFor(guns[i].Id, singleShot, heavyShot, spreadShot, burstShot);
+            }
+
+            serialized.FindProperty("fallbackStrategy").objectReferenceValue = singleShot;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static FireStrategy DefaultStrategyFor(string gunID, FireStrategy single, FireStrategy heavy, FireStrategy spread, FireStrategy burst)
+        {
+            if (Array.IndexOf(SPREAD_GUN_IDS, gunID) >= 0)
+                return spread;
+
+            if (Array.IndexOf(BURST_GUN_IDS, gunID) >= 0)
+                return burst;
+
+            if (Array.IndexOf(HEAVY_GUN_IDS, gunID) >= 0)
+                return heavy;
+
+            return single;
+        }
+
         static void CreateBulletPrefab(BulletConfig config)
         {
             GameObject bulletObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -219,9 +302,56 @@ namespace GunJump.EditorTools
             Bullet bullet = bulletObject.AddComponent<Bullet>();
             SetReference(bullet, "config", config);
 
-            EnsureFolder(FolderOf(BULLET_PREFAB_PATH));
-            PrefabUtility.SaveAsPrefabAsset(bulletObject, BULLET_PREFAB_PATH);
-            Object.DestroyImmediate(bulletObject);
+            SaveAsPrefab(bulletObject, BULLET_PREFAB_PATH);
+        }
+
+        static void BuildGunRigPrefab()
+        {
+            if (!File.Exists(PROTOTYPE_SCENE_PATH))
+                throw new InvalidOperationException($"No existe {PROTOTYPE_SCENE_PATH}: el arma de los niveles se copia de ahí.");
+
+            Scene prototype = SceneManager.GetSceneByPath(PROTOTYPE_SCENE_PATH);
+            bool wasOpen = prototype.IsValid() && prototype.isLoaded;
+            if (!wasOpen)
+                prototype = EditorSceneManager.OpenScene(PROTOTYPE_SCENE_PATH, OpenSceneMode.Additive);
+
+            Gun sourceGun = FindInScene<Gun>(prototype);
+            BulletSpawner sourceSpawner = sourceGun != null ? GetReference<BulletSpawner>(sourceGun, "bulletSpawner") : null;
+
+            if (sourceGun == null || sourceSpawner == null)
+            {
+                if (!wasOpen)
+                    EditorSceneManager.CloseScene(prototype, true);
+
+                throw new InvalidOperationException("Prototype no tiene un Gun con su BulletSpawner asignado: no hay arma que copiar.");
+            }
+
+            GameObject root = new GameObject("GunRig");
+
+            BulletSpawner spawner = Object.Instantiate(sourceSpawner, root.transform);
+            spawner.name = "BulletSpawner";
+            spawner.transform.localPosition = Vector3.zero;
+
+            Gun gun = Object.Instantiate(sourceGun, root.transform);
+            gun.name = "Gun";
+            gun.transform.localPosition = Vector3.zero;
+
+            SetReference(gun, "bulletSpawner", spawner);
+            SetReference(gun, "weapons", Load<WeaponCatalog>(WEAPON_CATALOG_PATH));
+
+            if (!wasOpen)
+                EditorSceneManager.CloseScene(prototype, true);
+
+            SaveAsPrefab(root, GUN_RIG_PREFAB_PATH);
+        }
+
+        static void BuildLevelPrefabs()
+        {
+            SaveAsPrefab(CreateEnemy("Enemy", null, Vector3.zero), ENEMY_PREFAB_PATH);
+            SaveAsPrefab(CreateCoin("Coin", null, Vector3.zero), COIN_PREFAB_PATH);
+            SaveAsPrefab(CreateFinish(Vector3.zero), FINISH_PREFAB_PATH);
+            SaveAsPrefab(CreateMultiplierWall(Vector3.zero), MULTIPLIER_WALL_PREFAB_PATH);
+            SaveAsPrefab(CreateBlock("Platform", null, Vector3.zero, PLATFORM_SIZE, LoadMaterial(GROUND_MATERIAL)), PLATFORM_PREFAB_PATH);
         }
 
         static void BuildLevelCorePrefab()
@@ -232,68 +362,30 @@ namespace GunJump.EditorTools
             LevelSettings settings = root.AddComponent<LevelSettings>();
             LevelCore core = root.AddComponent<LevelCore>();
 
-            BulletSpawner spawner = new GameObject("BulletSpawner").AddComponent<BulletSpawner>();
-            spawner.transform.SetParent(root.transform, false);
-            SetReference(spawner, "prefab", Load<GameObject>(BULLET_PREFAB_PATH).GetComponent<Bullet>());
-
-            Gun gun = CreateGun(root.transform, spawner);
+            GameObject rig = (GameObject)PrefabUtility.InstantiatePrefab(Load<GameObject>(GUN_RIG_PREFAB_PATH), root.transform);
+            Gun gun = rig.GetComponentInChildren<Gun>(true);
             CreateGameplayCamera(root.transform, gun.transform);
+
+            EventSystem eventSystem = UiFactory.CreateEventSystem();
+            eventSystem.transform.SetParent(root.transform, false);
 
             InputReader input = new GameObject("Input").AddComponent<InputReader>();
             input.transform.SetParent(root.transform, false);
+            SetReference(input, "eventSystem", eventSystem);
 
             BuildLevelUi(root.transform, out HudView hud, out PauseView pauseView, out ResultView resultView);
 
             SetReference(core, "settings", settings);
             SetReference(core, "rules", Load<LevelRules>(LEVEL_RULES_PATH));
+            SetReference(core, "economy", Load<EconomyConfig>(ECONOMY_CONFIG_PATH));
+            SetReference(core, "levels", Load<LevelListSO>(LEVEL_LIST_PATH));
             SetReference(core, "gun", gun);
             SetReference(core, "input", input);
             SetReference(core, "hud", hud);
             SetReference(core, "pauseView", pauseView);
             SetReference(core, "resultView", resultView);
 
-            EnsureFolder(FolderOf(LEVEL_CORE_PREFAB_PATH));
-            PrefabUtility.SaveAsPrefabAsset(root, LEVEL_CORE_PREFAB_PATH);
-            Object.DestroyImmediate(root);
-        }
-
-        static Gun CreateGun(Transform parent, BulletSpawner spawner)
-        {
-            GameObject gunObject = new GameObject("Gun");
-            gunObject.transform.SetParent(parent, false);
-
-            Rigidbody body = gunObject.AddComponent<Rigidbody>();
-            body.interpolation = RigidbodyInterpolation.Interpolate;
-            body.collisionDetectionMode = CollisionDetectionMode.Continuous;
-
-            BoxCollider collider = gunObject.AddComponent<BoxCollider>();
-            collider.size = new Vector3(1f, 0.35f, 0.25f);
-
-            Material material = LoadMaterial(GUN_MATERIAL);
-            CreateGunPart("Barrel", gunObject.transform, Vector3.zero, new Vector3(1f, 0.35f, 0.25f), material);
-            CreateGunPart("Grip", gunObject.transform, new Vector3(-0.3f, -0.35f, 0f), new Vector3(0.25f, 0.45f, 0.2f), material);
-
-            GameObject muzzle = new GameObject("Muzzle");
-            muzzle.transform.SetParent(gunObject.transform, false);
-            muzzle.transform.localPosition = new Vector3(0.6f, 0f, 0f);
-
-            Gun gun = gunObject.AddComponent<Gun>();
-            SetReference(gun, "tuning", Load<GunTuning>(GUN_TUNING_PATH));
-            SetReference(gun, "muzzle", muzzle.transform);
-            SetReference(gun, "fireStrategy", Load<SingleShot>(SINGLE_SHOT_PATH));
-            SetReference(gun, "bulletSpawner", spawner);
-            return gun;
-        }
-
-        static void CreateGunPart(string name, Transform parent, Vector3 localPosition, Vector3 size, Material material)
-        {
-            GameObject part = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            part.name = name;
-            Object.DestroyImmediate(part.GetComponent<Collider>());
-            part.transform.SetParent(parent, false);
-            part.transform.localPosition = localPosition;
-            part.transform.localScale = size;
-            part.GetComponent<MeshRenderer>().sharedMaterial = material;
+            SaveAsPrefab(root, LEVEL_CORE_PREFAB_PATH);
         }
 
         static void CreateGameplayCamera(Transform parent, Transform target)
@@ -349,27 +441,29 @@ namespace GunJump.EditorTools
         static void BuildPausePanel(Transform canvas, PauseView pauseView)
         {
             GameObject panel = UiFactory.CreateOverlay("PausePanel", canvas);
-            Vector2 buttonSize = new Vector2(600f, 150f);
 
             TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "Pausa", 96f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(title.rectTransform, UiFactory.CENTER, new Vector2(0f, 260f), new Vector2(900f, 160f));
 
             CommandButton resume = UiFactory.CreateButton("ResumeButton", panel.transform, "Seguir", 52f);
-            UiFactory.Place((RectTransform)resume.transform, UiFactory.CENTER, new Vector2(0f, 40f), buttonSize);
+            UiFactory.Place((RectTransform)resume.transform, UiFactory.CENTER, new Vector2(0f, 40f), BUTTON_SIZE);
 
             CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Reintentar", 52f);
-            UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -150f), buttonSize);
+            UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -150f), BUTTON_SIZE);
+
+            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menú", 52f);
+            UiFactory.Place((RectTransform)menu.transform, UiFactory.CENTER, new Vector2(0f, -340f), BUTTON_SIZE);
 
             SetReference(pauseView, "panel", panel);
             SetReference(pauseView, "resumeButton", resume);
             SetReference(pauseView, "retryButton", retry);
+            SetReference(pauseView, "menuButton", menu);
             panel.SetActive(false);
         }
 
         static void BuildResultPanel(Transform canvas, ResultView resultView)
         {
             GameObject panel = UiFactory.CreateOverlay("ResultPanel", canvas);
-            Vector2 buttonSize = new Vector2(600f, 150f);
 
             TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "¡Nivel completado!", 80f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(title.rectTransform, UiFactory.CENTER, new Vector2(0f, 460f), new Vector2(1000f, 160f));
@@ -391,36 +485,33 @@ namespace GunJump.EditorTools
             TMP_Text multiplier = UiFactory.CreateLabel("Multiplier", panel.transform, "Multiplicador x1", 44f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(multiplier.rectTransform, UiFactory.CENTER, new Vector2(0f, -10f), new Vector2(900f, 80f));
 
+            TMP_Text score = UiFactory.CreateLabel("Score", panel.transform, "Puntaje 0", 44f, TextAlignmentOptions.Center, Color.white);
+            UiFactory.Place(score.rectTransform, UiFactory.CENTER, new Vector2(0f, -90f), new Vector2(900f, 80f));
+
             CommandButton next = UiFactory.CreateButton("NextButton", panel.transform, "Siguiente nivel", 52f);
-            UiFactory.Place((RectTransform)next.transform, UiFactory.CENTER, new Vector2(0f, -220f), buttonSize);
+            UiFactory.Place((RectTransform)next.transform, UiFactory.CENTER, new Vector2(0f, -240f), BUTTON_SIZE);
 
             CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Reintentar", 52f);
-            UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -410f), buttonSize);
+            UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -420f), BUTTON_SIZE);
+
+            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menú", 52f);
+            UiFactory.Place((RectTransform)menu.transform, UiFactory.CENTER, new Vector2(-155f, -600f), HALF_BUTTON_SIZE);
+
+            CommandButton shop = UiFactory.CreateButton("ShopButton", panel.transform, "Tienda", 52f);
+            UiFactory.Place((RectTransform)shop.transform, UiFactory.CENTER, new Vector2(155f, -600f), HALF_BUTTON_SIZE);
 
             SetReference(resultView, "panel", panel);
             SetReference(resultView, "titleLabel", title);
             SetReference(resultView, "coinsLabel", coins);
             SetReference(resultView, "multiplierLabel", multiplier);
+            SetReference(resultView, "scoreLabel", score);
             SetReference(resultView, "starsRow", starsRow.gameObject);
             SetReferences(resultView, "stars", stars);
             SetReference(resultView, "nextButton", next);
             SetReference(resultView, "retryButton", retry);
+            SetReference(resultView, "menuButton", menu);
+            SetReference(resultView, "shopButton", shop);
             panel.SetActive(false);
-        }
-
-        static void BuildBootScene()
-        {
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
-
-            GameBootstrap bootstrap = new GameObject("Bootstrap").AddComponent<GameBootstrap>();
-            SetReference(bootstrap, "economyConfig", Load<EconomyConfig>(ECONOMY_CONFIG_PATH));
-            SetReference(bootstrap, "levels", Load<LevelCatalog>(LEVEL_CATALOG_PATH));
-
-            UiFactory.CreateEventSystem();
-
-            new GameObject("Audio", typeof(AudioListener));
-
-            SaveScene(scene, BOOT_SCENE_PATH);
         }
 
         static void BuildLoadingScene()
@@ -474,24 +565,42 @@ namespace GunJump.EditorTools
             CreateBlock("Ground_C", geometry, new Vector3(54.75f, -1f, 0f), new Vector3(20.5f, 2f, DEPTH), ground);
 
             Transform enemies = new GameObject("Enemies").transform;
-            CreateEnemy("Enemy_1", enemies, new Vector3(9f, 1f, 0f));
-            CreateEnemy("Enemy_2", enemies, new Vector3(24f, 1f, 0f));
-            CreateEnemy("Enemy_3", enemies, new Vector3(33f, 2.5f, 0f));
-            CreateEnemy("Enemy_4", enemies, new Vector3(50f, 1f, 0f));
+            PlacePrefab(ENEMY_PREFAB_PATH, "Enemy_1", enemies, new Vector3(9f, 1f, 0f));
+            PlacePrefab(ENEMY_PREFAB_PATH, "Enemy_2", enemies, new Vector3(24f, 1f, 0f));
+            PlacePrefab(ENEMY_PREFAB_PATH, "Enemy_3", enemies, new Vector3(33f, 2.5f, 0f));
+            PlacePrefab(ENEMY_PREFAB_PATH, "Enemy_4", enemies, new Vector3(50f, 1f, 0f));
 
             Transform coins = new GameObject("Coins").transform;
             float[] coinX = { 4f, 13f, 16.5f, 17.5f, 18.5f, 27f, 42f, 42.75f, 43.5f };
             float[] coinY = { 2f, 2.5f, 2.5f, 3f, 2.5f, 2.5f, 2.5f, 3f, 2.5f };
             for (int i = 0; i < coinX.Length; i++)
-                CreateCoin("Coin_" + (i + 1), coins, new Vector3(coinX[i], coinY[i], 0f));
+                PlacePrefab(COIN_PREFAB_PATH, "Coin_" + (i + 1), coins, new Vector3(coinX[i], coinY[i], 0f));
 
-            CreateFinish(new Vector3(58.5f, 0f, 0f));
-            CreateMultiplierWall(new Vector3(63.5f, 0f, 0f));
+            PlacePrefab(FINISH_PREFAB_PATH, "Finish", null, new Vector3(58.5f, 0f, 0f));
+            PlacePrefab(MULTIPLIER_WALL_PREFAB_PATH, "MultiplierWall", null, new Vector3(63.5f, 0f, 0f));
 
             SaveScene(scene, LEVEL1_SCENE_PATH);
         }
 
-        static void CreateBlock(string name, Transform parent, Vector3 center, Vector3 size, Material material)
+        static void RegisterLevels()
+        {
+            AppendToBuildSettings(LEVEL1_SCENE_PATH);
+            PointLevelListAt(LEVEL1_SCENE_PATH);
+        }
+
+        static GameObject PlacePrefab(string prefabPath, string name, Transform parent, Vector3 position)
+        {
+            GameObject instance = (GameObject)PrefabUtility.InstantiatePrefab(Load<GameObject>(prefabPath));
+            instance.name = name;
+
+            if (parent != null)
+                instance.transform.SetParent(parent, false);
+
+            instance.transform.position = position;
+            return instance;
+        }
+
+        static GameObject CreateBlock(string name, Transform parent, Vector3 center, Vector3 size, Material material)
         {
             GameObject block = GameObject.CreatePrimitive(PrimitiveType.Cube);
             block.name = name;
@@ -500,9 +609,10 @@ namespace GunJump.EditorTools
             block.transform.localScale = size;
             block.GetComponent<MeshRenderer>().sharedMaterial = material;
             GameObjectUtility.SetStaticEditorFlags(block, StaticEditorFlags.BatchingStatic);
+            return block;
         }
 
-        static void CreateEnemy(string name, Transform parent, Vector3 position)
+        static GameObject CreateEnemy(string name, Transform parent, Vector3 position)
         {
             GameObject enemy = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             enemy.name = name;
@@ -516,9 +626,10 @@ namespace GunJump.EditorTools
             StaticEnemy staticEnemy = enemy.AddComponent<StaticEnemy>();
             SetReference(staticEnemy, "config", Load<EnemyConfig>(ENEMY_CONFIG_PATH));
             SetReference(staticEnemy, "body", body);
+            return enemy;
         }
 
-        static void CreateCoin(string name, Transform parent, Vector3 position)
+        static GameObject CreateCoin(string name, Transform parent, Vector3 position)
         {
             GameObject coin = GameObject.CreatePrimitive(PrimitiveType.Cube);
             coin.name = name;
@@ -532,9 +643,10 @@ namespace GunJump.EditorTools
             trigger.isTrigger = true;
             trigger.size = new Vector3(3f, 3f, DEPTH / 0.15f);
             coin.AddComponent<CoinPickup>();
+            return coin;
         }
 
-        static void CreateFinish(Vector3 groundPosition)
+        static GameObject CreateFinish(Vector3 groundPosition)
         {
             GameObject finish = new GameObject("Finish");
             finish.transform.position = groundPosition;
@@ -554,9 +666,10 @@ namespace GunJump.EditorTools
             trigger.isTrigger = true;
             trigger.size = new Vector3(5f, 6f, DEPTH);
             zone.AddComponent<FinishZone>();
+            return finish;
         }
 
-        static void CreateMultiplierWall(Vector3 groundPosition)
+        static GameObject CreateMultiplierWall(Vector3 groundPosition)
         {
             const float BLOCK_HEIGHT = 1.5f;
             const float SPACING = 1.55f;
@@ -601,6 +714,8 @@ namespace GunJump.EditorTools
                 serialized.FindProperty("multiplier").intValue = value;
                 serialized.ApplyModifiedPropertiesWithoutUndo();
             }
+
+            return wall;
         }
 
         static void SaveScene(Scene scene, string path)
@@ -609,25 +724,12 @@ namespace GunJump.EditorTools
             EditorSceneManager.SaveScene(scene, path);
         }
 
-        static void UpdateBuildSettings()
+        static GameObject SaveAsPrefab(GameObject root, string path)
         {
-            string[] ordered = { BOOT_SCENE_PATH, LOADING_SCENE_PATH, LEVEL1_SCENE_PATH };
-            List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>();
-            foreach (string path in ordered)
-            {
-                if (File.Exists(path))
-                    scenes.Add(new EditorBuildSettingsScene(path, true));
-            }
-
-            foreach (EditorBuildSettingsScene existing in EditorBuildSettings.scenes)
-            {
-                if (existing.path == PROTOTYPE_SCENE_PATH || Array.IndexOf(ordered, existing.path) >= 0)
-                    continue;
-
-                scenes.Add(existing);
-            }
-
-            EditorBuildSettings.scenes = scenes.ToArray();
+            EnsureFolder(FolderOf(path));
+            GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
+            Object.DestroyImmediate(root);
+            return prefab;
         }
 
         static void AppendToBuildSettings(string path)
@@ -641,6 +743,52 @@ namespace GunJump.EditorTools
                 scenes.Add(new EditorBuildSettingsScene(path, true));
 
             EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        static void PointLevelListAt(params string[] levelScenePaths)
+        {
+            List<int> buildIndices = new List<int>();
+            foreach (string path in levelScenePaths)
+            {
+                int buildIndex = BuildIndexOf(path);
+                if (buildIndex < 0)
+                    throw new InvalidOperationException($"{path} no está habilitada en Build Settings: no se puede poner en LevelListSO.");
+
+                buildIndices.Add(buildIndex);
+            }
+
+            LevelListSO levelList = Load<LevelListSO>(LEVEL_LIST_PATH);
+            levelList.levelBuildIDs = buildIndices;
+            EditorUtility.SetDirty(levelList);
+        }
+
+        static int BuildIndexOf(string path)
+        {
+            int buildIndex = 0;
+            foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            {
+                if (!scene.enabled)
+                    continue;
+
+                if (scene.path == path)
+                    return buildIndex;
+
+                buildIndex++;
+            }
+
+            return -1;
+        }
+
+        static ComponentType FindInScene<ComponentType>(Scene scene) where ComponentType : Component
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                ComponentType found = root.GetComponentInChildren<ComponentType>(true);
+                if (found != null)
+                    return found;
+            }
+
+            return null;
         }
 
         static AssetType Load<AssetType>(string path) where AssetType : Object
@@ -705,6 +853,23 @@ namespace GunJump.EditorTools
             AssetDatabase.CreateFolder(parent, Path.GetFileName(folder));
         }
 
+        static ComponentType GetReference<ComponentType>(Object target, string field) where ComponentType : Object
+        {
+            SerializedProperty property = new SerializedObject(target).FindProperty(field);
+            return property != null ? property.objectReferenceValue as ComponentType : null;
+        }
+
+        static void SetFloat(Object target, string field, float value)
+        {
+            SerializedObject serialized = new SerializedObject(target);
+            SerializedProperty property = serialized.FindProperty(field);
+            if (property == null)
+                throw new InvalidOperationException($"{target.GetType().Name} no tiene el campo serializado '{field}'.");
+
+            property.floatValue = value;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         internal static void SetReference(Object target, string field, Object value)
         {
             if (value == null)
@@ -719,7 +884,7 @@ namespace GunJump.EditorTools
             serialized.ApplyModifiedPropertiesWithoutUndo();
         }
 
-        static void SetReferences(Object target, string field, Object[] values)
+        internal static void SetReferences(Object target, string field, Object[] values)
         {
             SerializedObject serialized = new SerializedObject(target);
             SerializedProperty property = serialized.FindProperty(field);

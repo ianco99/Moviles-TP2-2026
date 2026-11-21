@@ -37,15 +37,15 @@ namespace GunJump.EditorTools
                 return;
 
             Scene active = SceneManager.GetActiveScene();
-            SceneAsset boot = AssetDatabase.LoadAssetAtPath<SceneAsset>(GameSceneBuilder.BOOT_SCENE_PATH);
-            bool route = Enabled && boot != null && IsGameScene(active.path);
+            SceneAsset menu = AssetDatabase.LoadAssetAtPath<SceneAsset>(GameSceneBuilder.MAIN_MENU_SCENE_PATH);
+            bool route = Enabled
+                         && menu != null
+                         && IsGameScene(active.path)
+                         && active.path != GameSceneBuilder.MAIN_MENU_SCENE_PATH
+                         && active.path != GameSceneBuilder.LOADING_SCENE_PATH;
 
-            EditorSceneManager.playModeStartScene = route ? boot : null;
-
-            bool isContent = route
-                             && active.path != GameSceneBuilder.BOOT_SCENE_PATH
-                             && active.path != GameSceneBuilder.LOADING_SCENE_PATH;
-            SessionState.SetString(GameBootstrap.EDITOR_START_SCENE_KEY, isContent ? active.name : string.Empty);
+            EditorSceneManager.playModeStartScene = route ? menu : null;
+            SessionState.SetString(LevelLoader.EDITOR_START_SCENE_KEY, route ? active.path : string.Empty);
         }
 
         static bool IsGameScene(string path)

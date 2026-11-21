@@ -72,6 +72,14 @@ namespace GunJump.EditorTools
         const float LOGS_ROW_SPACING = 340f;
         const float LOGS_SCROLL_SENSITIVITY = 30f;
 
+        const string BUTTON_PREFAB_PATH = ROOT + "/Prefabs/Menu/Button.prefab";
+        const string LEVEL_BUTTON_PATH = ROOT + "/Prefabs/Menu/LevelSelect/LevelButton.prefab";
+        const string LEVEL_STARS_NAME = "Stars";
+        const string LEVELS_BACK_AREA_NAME = "LevelsBackArea";
+        const float LEVEL_STAR_SIZE = 26f;
+        const float LEVEL_STAR_SPACING = 42f;
+        const float LEVEL_STARS_GAP = 12f;
+
         static readonly Vector2 TOP_CENTER = new Vector2(0.5f, 1f);
         static readonly Vector2 BOTTOM_CENTER = new Vector2(0.5f, 0f);
         static readonly Vector2 LOGS_BUTTON_LABEL_PADDING = new Vector2(24f, 24f);
@@ -83,6 +91,7 @@ namespace GunJump.EditorTools
         static readonly Color LOGS_BACKGROUND_COLOR = new Color(0.12f, 0.12f, 0.14f, 1f);
         static readonly Color LOGS_PANEL_COLOR = new Color(0.06f, 0.06f, 0.07f, 1f);
         static readonly Color LOGS_FILTER_COLOR = new Color(0.35f, 0.7f, 1f);
+        static readonly Vector2 LEVEL_STARS_SIZE = new Vector2(130f, 40f);
 
         [MenuItem("GunJump/UI/Setup Menu Buttons")]
         public static void Setup()
@@ -124,6 +133,125 @@ namespace GunJump.EditorTools
             string result = AddLogsScreen(scene);
             Close(scene, wasOpen);
             Debug.Log($"GunJump: {result}");
+        }
+
+        [MenuItem("GunJump/UI/Setup Level Select")]
+        public static void SetupLevelSelect()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("GunJump", "Salí de Play antes de correr Setup Level Select.", "OK");
+                return;
+            }
+
+            if (!File.Exists(MAIN_MENU_SCENE_PATH) || !File.Exists(BUTTON_PREFAB_PATH))
+            {
+                EditorUtility.DisplayDialog("GunJump", $"Faltan {MAIN_MENU_SCENE_PATH} o {BUTTON_PREFAB_PATH}.", "OK");
+                return;
+            }
+
+            if (File.Exists(LEVEL_BUTTON_PATH)
+                && !EditorUtility.DisplayDialog("GunJump", "La selección de nivel ya está armada. ¿Reconstruir el botón de nivel y el de volver?", "Reconstruir", "Cancelar"))
+                return;
+
+            LevelButtonView levelButton = BuildLevelButtonPrefab();
+
+            Scene scene = Open(MAIN_MENU_SCENE_PATH, out bool wasOpen);
+            string result = AddLevelSelectBack(scene, levelButton);
+            Close(scene, wasOpen);
+            Debug.Log($"GunJump: {result}");
+        }
+
+        static LevelButtonView BuildLevelButtonPrefab()
+        {
+            if (!File.Exists(LEVEL_BUTTON_PATH))
+            {
+                string folder = Path.GetDirectoryName(LEVEL_BUTTON_PATH).Replace('\\', '/');
+                if (!AssetDatabase.IsValidFolder(folder))
+                    AssetDatabase.CreateFolder(Path.GetDirectoryName(folder).Replace('\\', '/'), Path.GetFileName(folder));
+
+                AssetDatabase.CopyAsset(BUTTON_PREFAB_PATH, LEVEL_BUTTON_PATH);
+            }
+
+            GameObject contents = PrefabUtility.LoadPrefabContents(LEVEL_BUTTON_PATH);
+            Button button = contents.GetComponent<Button>();
+            TMP_Text numberLabel = contents.GetComponentInChildren<TMP_Text>(true);
+
+            if (button == null || numberLabel == null)
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+                throw new InvalidOperationException($"{BUTTON_PREFAB_PATH} tiene que tener un Button y un texto TMP para servir de botón de nivel.");
+            }
+
+            Transform oldStars = contents.transform.Find(LEVEL_STARS_NAME);
+            if (oldStars != null)
+                Object.DestroyImmediate(oldStars.gameObject);
+
+            RectTransform starsRow = UiFactory.CreateRect(LEVEL_STARS_NAME, contents.transform);
+            UiFactory.Place(starsRow, BOTTOM_CENTER, new Vector2(0f, -(LEVEL_STARS_SIZE.y + LEVEL_STARS_GAP)), LEVEL_STARS_SIZE);
+
+            Object[] stars = new Object[3];
+            for (int i = 0; i < stars.Length; i++)
+            {
+                Image star = UiFactory.CreateImage("Star" + (i + 1), starsRow, Color.white, false);
+                UiFactory.Place(star.rectTransform, UiFactory.CENTER, new Vector2((i - 1) * LEVEL_STAR_SPACING, 0f), new Vector2(LEVEL_STAR_SIZE, LEVEL_STAR_SIZE));
+                star.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
+                stars[i] = star;
+            }
+
+            CanvasGroup canvasGroup = contents.GetComponent<CanvasGroup>();
+            if (canvasGroup == null)
+                canvasGroup = contents.AddComponent<CanvasGroup>();
+
+            LevelButtonView view = contents.GetComponent<LevelButtonView>();
+            if (view == null)
+                view = contents.AddComponent<LevelButtonView>();
+
+            GameSceneBuilder.SetReference(view, "button", button);
+            GameSceneBuilder.SetReference(view, "numberLabel", numberLabel);
+            GameSceneBuilder.SetReferences(view, "stars", stars);
+            GameSceneBuilder.SetReference(view, "canvasGroup", canvasGroup);
+
+            PrefabUtility.SaveAsPrefabAsset(contents, LEVEL_BUTTON_PATH);
+            PrefabUtility.UnloadPrefabContents(contents);
+
+            return Load<GameObject>(LEVEL_BUTTON_PATH).GetComponent<LevelButtonView>();
+        }
+
+        static string AddLevelSelectBack(Scene scene, LevelButtonView levelButton)
+        {
+            MainMenuController mainMenu = FindInScene<MainMenuController>(scene);
+            LevelsMenuController levelsMenu = FindInScene<LevelsMenuController>(scene);
+            if (mainMenu == null || levelsMenu == null)
+                return "MainMenu no tiene MainMenuController o LevelsMenuController: no se armó la selección de nivel.";
+
+            GameSceneBuilder.SetReference(levelsMenu, "levelButton", levelButton);
+
+            Transform oldArea = levelsMenu.transform.Find(LEVELS_BACK_AREA_NAME);
+            if (oldArea != null)
+                Object.DestroyImmediate(oldArea.gameObject);
+
+            RectTransform area = UiFactory.CreateSafeArea(levelsMenu.transform);
+            area.name = LEVELS_BACK_AREA_NAME;
+            Button backButton = CreateBackButton(area);
+
+            GameSceneBuilder.SetReference(mainMenu, "levelsBackButton", backButton);
+
+            Save(scene);
+            return "botón de nivel con estrellas y botón de volver de la selección de nivel listos.";
+        }
+
+        static Button CreateBackButton(Transform parent)
+        {
+            Button backButton = CreateArtButton("BackButton", parent, Load<Sprite>(ROUND_BUTTON_PATH), Color.white);
+            UiFactory.Place((RectTransform)backButton.transform, UiFactory.TOP_LEFT, new Vector2(CORNER_MARGIN, -CORNER_MARGIN),
+                new Vector2(CORNER_BUTTON_SIZE, CORNER_BUTTON_SIZE));
+
+            Image arrow = UiFactory.CreateImage("Arrow", backButton.transform, Color.white, false);
+            arrow.sprite = Load<Sprite>(BACK_ARROW_PATH);
+            UiFactory.Stretch(arrow.rectTransform);
+            arrow.rectTransform.localScale = Vector3.one * BACK_ARROW_SCALE;
+            return backButton;
         }
 
         static string AddLogsScreen(Scene scene)
@@ -184,14 +312,7 @@ namespace GunJump.EditorTools
 
             RectTransform safeArea = UiFactory.CreateSafeArea(screen.transform);
 
-            backButton = CreateArtButton("BackButton", safeArea, Load<Sprite>(ROUND_BUTTON_PATH), Color.white);
-            UiFactory.Place((RectTransform)backButton.transform, UiFactory.TOP_LEFT, new Vector2(CORNER_MARGIN, -CORNER_MARGIN),
-                new Vector2(CORNER_BUTTON_SIZE, CORNER_BUTTON_SIZE));
-
-            Image arrow = UiFactory.CreateImage("Arrow", backButton.transform, Color.white, false);
-            arrow.sprite = Load<Sprite>(BACK_ARROW_PATH);
-            UiFactory.Stretch(arrow.rectTransform);
-            arrow.rectTransform.localScale = Vector3.one * BACK_ARROW_SCALE;
+            backButton = CreateBackButton(safeArea);
 
             TMP_Text title = CreateMenuLabel("Title", safeArea, "LOGS", CHOICE_FONT_SIZE);
             UiFactory.Place(title.rectTransform, TOP_CENTER, new Vector2(0f, -LOGS_TITLE_TOP), LOGS_TITLE_SIZE);

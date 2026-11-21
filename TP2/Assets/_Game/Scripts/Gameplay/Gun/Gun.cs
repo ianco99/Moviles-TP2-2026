@@ -15,6 +15,8 @@ namespace GunJump.Gameplay
         [Tooltip("El cañón apunta hacia el eje X local de este transform.")]
         [SerializeField] Transform muzzle;
         [SerializeField] FireStrategy fireStrategy;
+        [Tooltip("Opcional. Elige la estrategia según el arma equipada en la tienda al cargar el nivel. Vacío = siempre Fire Strategy.")]
+        [SerializeField] WeaponCatalog weapons;
         [SerializeField] BulletSpawner bulletSpawner;
 
         [Header("Equipamiento")]
@@ -154,12 +156,14 @@ namespace GunJump.Gameplay
                 || !services.ContainsService<LevelLoader>())
                 return;
 
+            GunLoadout loadout = GunLoadout.Read(services.GetService<PlayerEquipment>());
+            FireStrategy equippedStrategy = weapons != null ? weapons.StrategyFor(loadout.Gun) : null;
+            if (equippedStrategy != null)
+                SetStrategy(equippedStrategy);
+
             LevelLoader loader = services.GetService<LevelLoader>();
             loader.Hold();
-            ApplyLoadout(
-                GunLoadout.Read(services.GetService<PlayerEquipment>()),
-                services.GetService<ContentLibrary>(),
-                loader.Release);
+            ApplyLoadout(loadout, services.GetService<ContentLibrary>(), loader.Release);
         }
     }
 }

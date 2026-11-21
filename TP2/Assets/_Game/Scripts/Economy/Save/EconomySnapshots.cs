@@ -26,4 +26,19 @@ namespace _Game.Scripts.Economy
         public string category;
         public string id;
     }
+
+    [Serializable]
+    public sealed class LevelProgressSnapshot
+    {
+        [SerializeField] internal int version = 1;
+        [SerializeField] internal List<LevelRecord> levels = new List<LevelRecord>();
+    }
+
+    [Serializable]
+    internal sealed class LevelRecord
+    {
+        public string levelID;
+        public int stars;
+        public int bestScore;
+    }
 }

@@ -10,17 +10,21 @@ namespace _Game.Scripts.Economy
     {
         private const string WALLET_KEY = "Save.Wallet";
         private const string INVENTORY_KEY = "Save.Inventory";
+        private const string LEVELS_KEY = "Save.Levels";
 
         private readonly PlayerWalletManager wallet;
         private readonly PlayerInventoryManager inventory;
+        private readonly PlayerLevelProgress levelProgress;
 
-        public EconomySave(PlayerWalletManager wallet, PlayerInventoryManager inventory)
+        public EconomySave(PlayerWalletManager wallet, PlayerInventoryManager inventory, PlayerLevelProgress levelProgress)
         {
             this.wallet = wallet;
             this.inventory = inventory;
+            this.levelProgress = levelProgress;
 
             wallet.Changed += SaveWallet;
             inventory.Changed += SaveInventory;
+            levelProgress.Changed += SaveLevelProgress;
         }
 
         public bool Load()
@@ -30,6 +34,13 @@ namespace _Game.Scripts.Economy
             if (savedInventory != null)
             {
                 inventory.Restore(savedInventory);
+            }
+
+            LevelProgressSnapshot savedLevels = Read<LevelProgressSnapshot>(LEVELS_KEY);
+
+            if (savedLevels != null)
+            {
+                levelProgress.Restore(savedLevels);
             }
 
             WalletSnapshot savedWallet = Read<WalletSnapshot>(WALLET_KEY);
@@ -51,6 +62,11 @@ namespace _Game.Scripts.Economy
         private void SaveInventory()
         {
             Write(INVENTORY_KEY, inventory.CreateSnapshot());
+        }
+
+        private void SaveLevelProgress()
+        {
+            Write(LEVELS_KEY, levelProgress.CreateSnapshot());
         }
 
         private static void Write<SnapshotType>(string key, SnapshotType snapshot)

@@ -2,18 +2,18 @@ namespace GunJump.Core
 {
     public sealed class LoadSceneCommand : ICommand
     {
-        readonly SceneLoader loader;
-        readonly string sceneName;
+        readonly LevelLoader loader;
+        readonly int buildIndex;
 
-        public LoadSceneCommand(SceneLoader loader, string sceneName)
+        public LoadSceneCommand(LevelLoader loader, int buildIndex)
         {
             this.loader = loader;
-            this.sceneName = sceneName;
+            this.buildIndex = buildIndex;
         }
 
         public void Execute()
         {
-            loader.Load(sceneName);
+            loader.Load(buildIndex);
         }
     }
 }

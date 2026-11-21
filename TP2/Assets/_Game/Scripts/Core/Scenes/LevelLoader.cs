@@ -8,6 +8,8 @@ namespace GunJump.Core
 {
     public sealed class LevelLoader : IService
     {
+        public const string EDITOR_START_SCENE_KEY = "GunJump.StartScene";
+
         const float READY_PROGRESS = 0.9f;
         const float SCENE_PROGRESS_SHARE = 0.8f;
         const float MAX_HOLD_SECONDS = 15f;
@@ -16,6 +18,7 @@ namespace GunJump.Core
         readonly string loadingScene;
         readonly MonoBehaviour runner;
         int holds;
+        MenuScreen requestedMenuScreen;
 
         bool isLoading;
         public bool IsLoading => isLoading;
@@ -36,6 +39,22 @@ namespace GunJump.Core
 
             isLoading = true;
             runner.StartCoroutine(LoadRoutine(buildIndex));
+        }
+
+        public void LoadMenu(int buildIndex, MenuScreen screen)
+        {
+            if (IsLoading)
+                return;
+
+            requestedMenuScreen = screen;
+            Load(buildIndex);
+        }
+
+        public MenuScreen TakeRequestedMenuScreen()
+        {
+            MenuScreen screen = requestedMenuScreen;
+            requestedMenuScreen = MenuScreen.Landing;
+            return screen;
         }
 
         public void Restart()
