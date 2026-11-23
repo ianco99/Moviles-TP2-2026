@@ -537,7 +537,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 511333259764955713, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: hint
-      value: "Apunt\xE1 hacia abajo para subir"
+      value: Aim down to go up
       objectReference: {fileID: 0}
     - target: {fileID: 2084567163412388981, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -603,7 +603,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 511333259764955713, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: hint
-      value: "Cada disparo te empuja al rev\xE9s del ca\xF1\xF3n"
+      value: Each shot pushes you away from the barrel
       objectReference: {fileID: 0}
     - target: {fileID: 2084567163412388981, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -828,7 +828,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 511333259764955713, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: hint
-      value: 'Disparale a los enemigos: dan monedas'
+      value: 'Shoot enemies: they drop coins'
       objectReference: {fileID: 0}
     - target: {fileID: 2084567163412388981, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1130,7 +1130,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 511333259764955713, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: hint
-      value: "\xA1Lleg\xE1 a la meta y acertale al multiplicador!"
+      value: Reach the goal and hit the multiplier!
       objectReference: {fileID: 0}
     - target: {fileID: 2084567163412388981, guid: 7a251974a679a09409642e76e201f1aa, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1643,7 +1643,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 826205864189868118, guid: 1886c8c6ec5005b44bf24348e416f51c, type: 3}
       propertyPath: startHint
-      value: "Toc\xE1 la pantalla para disparar"
+      value: Tap the screen to shoot
       objectReference: {fileID: 0}
     - target: {fileID: 826205864189868118, guid: 1886c8c6ec5005b44bf24348e416f51c, type: 3}
       propertyPath: startTimeScale

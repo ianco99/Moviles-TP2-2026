@@ -76,6 +76,11 @@ namespace GunJump.EditorTools
         const string HAPTICS_TUNING_PATH = ROOT + "/Data/Tuning/HapticsTuning.asset";
         const string PLAY_GAMES_AREA_NAME = "PlayGamesButtonArea";
         const string QUIT_PANEL_NAME = "QuitPanel";
+        const string LEVEL_CORE_PREFAB_PATH = ROOT + "/Prefabs/Level/LevelCore.prefab";
+        const string PAUSE_BUTTON_NAME = "PauseButton";
+        const string RESUME_BUTTON_NAME = "ResumeButton";
+        const string NEXT_BUTTON_NAME = "NextButton";
+        const string RETRY_BUTTON_NAME = "RetryButton";
         const string BOOTSTRAPPER_TYPE_NAME = "Bootstrapper";
         const int LOGS_SLOT = 0;
         const int ACHIEVEMENTS_SLOT = 1;
@@ -148,6 +153,83 @@ namespace GunJump.EditorTools
             Debug.Log($"GunJump: {result}");
         }
 
+        [MenuItem("GunJump/UI/Restyle Level UI")]
+        public static void RestyleLevelUi()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("GunJump", "Salí de Play antes de correr Restyle Level UI.", "OK");
+                return;
+            }
+
+            if (!File.Exists(LEVEL_CORE_PREFAB_PATH))
+            {
+                EditorUtility.DisplayDialog("GunJump", $"No existe {LEVEL_CORE_PREFAB_PATH}.", "OK");
+                return;
+            }
+
+            GameObject contents = PrefabUtility.LoadPrefabContents(LEVEL_CORE_PREFAB_PATH);
+            int buttons = ApplyMenuStyle(contents);
+            PrefabUtility.SaveAsPrefabAsset(contents, LEVEL_CORE_PREFAB_PATH);
+            PrefabUtility.UnloadPrefabContents(contents);
+            Debug.Log($"GunJump: UI del nivel con la fuente y los botones del menú ({buttons} botones) en {LEVEL_CORE_PREFAB_PATH}.");
+        }
+
+        internal static int ApplyMenuStyle(GameObject levelCoreRoot)
+        {
+            TMP_FontAsset font = Load<TMP_FontAsset>(FONT_PATH);
+            Sprite roundSprite = Load<Sprite>(ROUND_BUTTON_PATH);
+            Sprite wideSprite = Load<Sprite>(WIDE_BUTTON_PATH);
+            RuntimeAnimatorController buttonAnimator = Load<RuntimeAnimatorController>(BUTTON_ANIMATOR_PATH);
+
+            foreach (TextMeshProUGUI label in levelCoreRoot.GetComponentsInChildren<TextMeshProUGUI>(true))
+            {
+                label.font = font;
+            }
+
+            CommandButton[] commandButtons = levelCoreRoot.GetComponentsInChildren<CommandButton>(true);
+            foreach (CommandButton commandButton in commandButtons)
+            {
+                bool isPause = commandButton.name == PAUSE_BUTTON_NAME;
+
+                Image image = commandButton.GetComponent<Image>();
+                image.sprite = isPause ? roundSprite : wideSprite;
+                image.type = Image.Type.Simple;
+                image.color = TintForLevelButton(commandButton.name);
+
+                Button button = commandButton.GetComponent<Button>();
+                button.transition = Selectable.Transition.Animation;
+
+                Animator animator = commandButton.GetComponent<Animator>();
+                if (animator == null)
+                    animator = commandButton.gameObject.AddComponent<Animator>();
+
+                animator.runtimeAnimatorController = buttonAnimator;
+                animator.updateMode = AnimatorUpdateMode.UnscaledTime;
+
+                foreach (TMP_Text label in commandButton.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    label.enableAutoSizing = true;
+                    label.fontSizeMin = MIN_FONT_SIZE;
+                    label.fontSizeMax = label.fontSize;
+                    label.color = Color.white;
+                }
+            }
+
+            return commandButtons.Length;
+        }
+
+        static Color TintForLevelButton(string buttonName)
+        {
+            if (buttonName == RESUME_BUTTON_NAME || buttonName == NEXT_BUTTON_NAME)
+                return CONFIRM_COLOR;
+
+            if (buttonName == RETRY_BUTTON_NAME)
+                return CANCEL_COLOR;
+
+            return Color.white;
+        }
+
         [MenuItem("GunJump/UI/Setup Quit Prompt")]
         public static void SetupQuitPrompt()
         {
@@ -192,10 +274,10 @@ namespace GunJump.EditorTools
             box.type = Image.Type.Sliced;
             UiFactory.Place(box.rectTransform, UiFactory.CENTER, Vector2.zero, PANEL_SIZE);
 
-            TMP_Text title = CreateMenuLabel("Title", box.transform, "¿SALIR DEL JUEGO?", TITLE_FONT_SIZE);
+            TMP_Text title = CreateMenuLabel("Title", box.transform, "QUIT GAME?", TITLE_FONT_SIZE);
             UiFactory.Place(title.rectTransform, UiFactory.CENTER, TITLE_POSITION, TITLE_SIZE);
 
-            Button confirm = CreateChoice("YesButton", box.transform, "SÍ", CONFIRM_COLOR, -CHOICE_OFFSET_X);
+            Button confirm = CreateChoice("YesButton", box.transform, "YES", CONFIRM_COLOR, -CHOICE_OFFSET_X);
             Button cancel = CreateChoice("NoButton", box.transform, "NO", CANCEL_COLOR, CHOICE_OFFSET_X);
 
             GameSceneBuilder.SetReference(mainMenu, "quitPanel", overlay);
@@ -297,7 +379,7 @@ namespace GunJump.EditorTools
 
             RectTransform area = UiFactory.CreateSafeArea(landing.transform);
             area.name = PLAY_GAMES_AREA_NAME;
-            Button achievements = CreateCornerTextButton("AchievementsButton", area, "LOGROS", ACHIEVEMENTS_SLOT);
+            Button achievements = CreateCornerTextButton("AchievementsButton", area, "AWARDS", ACHIEVEMENTS_SLOT);
             Button leaderboard = CreateCornerTextButton("LeaderboardButton", area, "TOP", LEADERBOARD_SLOT);
             GameSceneBuilder.SetReference(mainMenu, "achievementsButton", achievements);
             GameSceneBuilder.SetReference(mainMenu, "leaderboardButton", leaderboard);
@@ -530,7 +612,7 @@ namespace GunJump.EditorTools
             status.textWrappingMode = TextWrappingModes.Normal;
             UiFactory.Place(status.rectTransform, BOTTOM_CENTER, new Vector2(0f, LOGS_STATUS_Y), LOGS_STATUS_SIZE);
 
-            Button clearButton = CreateRowButton("ClearButton", safeArea, "BORRAR", CANCEL_COLOR, 0f, out _);
+            Button clearButton = CreateRowButton("ClearButton", safeArea, "CLEAR", CANCEL_COLOR, 0f, out _);
 
             LogsMenuController controller = screen.gameObject.AddComponent<LogsMenuController>();
             GameSceneBuilder.SetReference(controller, "logText", logText);

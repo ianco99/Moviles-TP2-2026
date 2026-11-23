@@ -66,4 +66,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: eae8bb44bfd23fa40a1ecbebb417d069, type: 3}
   m_Name: 
   m_EditorClassIdentifier: GunJump.Gameplay::GunJump.Gameplay.TutorialZone
-  hint: Texto de ayuda
+  hint: Hint text

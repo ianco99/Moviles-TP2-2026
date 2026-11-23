@@ -12,8 +12,8 @@ namespace GunJump.UI
         private const string NO_PARSE_OPEN = "<noparse>";
         private const string NO_PARSE_CLOSE = "</noparse>";
         private const string ESCAPED_NO_PARSE_CLOSE = "</ noparse>";
-        private const string EMPTY_TEXT = "No hay logs para mostrar.";
-        private const string CLEARED_TEXT = "Logs borrados.";
+        private const string EMPTY_TEXT = "No logs to show.";
+        private const string CLEARED_TEXT = "Logs cleared.";
 
         [SerializeField] private TMP_Text logText;
         [SerializeField] private ScrollRect scrollRect;

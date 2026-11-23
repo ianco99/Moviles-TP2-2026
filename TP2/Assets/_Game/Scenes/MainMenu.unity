@@ -1284,7 +1284,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "S\xCD"
+  m_text: YES
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
   m_sharedMaterial: {fileID: 4571118685442557778, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
@@ -2411,11 +2411,7 @@ MonoBehaviour:
   scrollRect: {fileID: 177116308}
   clearButton: {fileID: 1537987161}
   statusText: {fileID: 1904339258}
-  maxVisibleLines: 200
   maxVisibleCharacters: 15000
-  infoColor: {r: 1, g: 1, b: 1, a: 1}
-  warningColor: {r: 1, g: 0.84, b: 0.2, a: 1}
-  errorColor: {r: 1, g: 0.42, b: 0.42, a: 1}
 --- !u!114 &742874367
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5864,7 +5860,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: LOGROS
+  m_text: AWARDS
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
   m_sharedMaterial: {fileID: 4571118685442557778, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
@@ -7254,7 +7250,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "\xBFSALIR DEL JUEGO?"
+  m_text: QUIT GAME?
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
   m_sharedMaterial: {fileID: 4571118685442557778, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
@@ -7391,7 +7387,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: BORRAR
+  m_text: CLEAR
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}
   m_sharedMaterial: {fileID: 4571118685442557778, guid: 1bb50c044a11a014e823b806cb67d0e2, type: 2}

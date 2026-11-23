@@ -53,7 +53,7 @@ namespace GunJump.UI
         public void Show(in ResultData data)
         {
             panel.SetActive(true);
-            titleLabel.text = data.Won ? "¡Nivel completado!" : "Intento fallido";
+            titleLabel.text = data.Won ? "Level complete!" : "Level failed";
 
             starsRow.SetActive(data.Won);
             for (int i = 0; i < stars.Length; i++)
@@ -64,9 +64,9 @@ namespace GunJump.UI
             scoreLabel.gameObject.SetActive(data.Won);
             if (data.Won)
             {
-                coinsLabel.SetText("+{0} monedas", data.Coins);
-                multiplierLabel.SetText("Multiplicador x{0}", data.Multiplier);
-                scoreLabel.SetText("Puntaje {0}", data.Score);
+                coinsLabel.SetText("+{0} coins", data.Coins);
+                multiplierLabel.SetText("Multiplier x{0}", data.Multiplier);
+                scoreLabel.SetText("Score {0}", data.Score);
             }
 
             nextButton.gameObject.SetActive(data.HasNext);

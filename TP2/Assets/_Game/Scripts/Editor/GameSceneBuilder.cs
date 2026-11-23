@@ -72,8 +72,13 @@ namespace GunJump.EditorTools
         const string KNOB_SPRITE_NAME = "UI/Skin/Knob.psd";
         const string SAFE_AREA_NAME = "SafeArea";
         const string TUTORIAL_GROUP_NAME = "Tutorial";
-        const string LEVEL1_START_HINT = "Tocá la pantalla para disparar";
-        const string DEFAULT_ZONE_HINT = "Texto de ayuda";
+        const string GEOMETRY_GROUP_NAME = "Geometry";
+        const string PLATFORMS_GROUP_NAME = "Platforms";
+        const string ENEMIES_GROUP_NAME = "Enemies";
+        const string COINS_GROUP_NAME = "Coins";
+        const string HAZARDS_GROUP_NAME = "Hazards";
+        const string LEVEL1_START_HINT = "Tap the screen to shoot";
+        const string DEFAULT_ZONE_HINT = "Hint text";
 
         const float DEPTH = 8f;
         const int MULTIPLIER_STEPS = 5;
@@ -98,10 +103,10 @@ namespace GunJump.EditorTools
         static readonly float[] TUTORIAL_ZONE_X = { 3f, 10f, 28f, 52f };
         static readonly string[] TUTORIAL_HINTS =
         {
-            "Cada disparo te empuja al revés del cañón",
-            "Disparale a los enemigos: dan monedas",
-            "Apuntá hacia abajo para subir",
-            "¡Llegá a la meta y acertale al multiplicador!"
+            "Each shot pushes you away from the barrel",
+            "Shoot enemies: they drop coins",
+            "Aim down to go up",
+            "Reach the goal and hit the multiplier!"
         };
 
         static readonly Vector3 PLATFORM_SIZE = new Vector3(4f, 1f, DEPTH);
@@ -200,6 +205,215 @@ namespace GunJump.EditorTools
             string templatesResult = created.Count > 0 ? string.Join(", ", created) : "ninguna";
             Debug.Log($"GunJump: cartel de ayuda en LevelCore: {hintResult}. Tutorial de Level1: {tutorialResult}. " +
                       $"Plantillas nuevas: {templatesResult}. Level1 a Level5 quedaron en Build Settings y en LevelListSO.");
+        }
+
+        [MenuItem("GunJump/Build/Level Drafts")]
+        public static void BuildLevelDrafts()
+        {
+            if (!CanBuild())
+                return;
+
+            EnsureData();
+            BuildLevelPrefabs();
+
+            List<string> drafted = new List<string>();
+            List<string> skipped = new List<string>();
+
+            for (int i = 0; i < TEMPLATE_LEVEL_PATHS.Length; i++)
+            {
+                string path = TEMPLATE_LEVEL_PATHS[i];
+                string levelName = Path.GetFileNameWithoutExtension(path);
+
+                if (!File.Exists(path))
+                {
+                    skipped.Add(levelName + " (no existe)");
+                    continue;
+                }
+
+                Scene scene = EditorSceneManager.OpenScene(path, OpenSceneMode.Single);
+                LevelGroups groups = FindLevelGroups(scene);
+
+                if (groups.enemies.childCount > 0 || groups.platforms.childCount > 0 || groups.hazards.childCount > 0)
+                {
+                    skipped.Add(levelName + " (ya tiene contenido)");
+                    continue;
+                }
+
+                DraftLevel(i, groups);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+                drafted.Add(levelName);
+            }
+
+            AssetDatabase.SaveAssets();
+            Reopen(LEVEL1_SCENE_PATH);
+            Debug.Log($"GunJump: borradores armados en {(drafted.Count > 0 ? string.Join(", ", drafted) : "ningún nivel")}. " +
+                      $"Sin tocar: {(skipped.Count > 0 ? string.Join(", ", skipped) : "ninguno")}. Ajustalos jugándolos en el teléfono.");
+        }
+
+        static LevelGroups FindLevelGroups(Scene scene)
+        {
+            return new LevelGroups
+            {
+                geometry = FindOrCreateRoot(scene, GEOMETRY_GROUP_NAME),
+                platforms = FindOrCreateRoot(scene, PLATFORMS_GROUP_NAME),
+                enemies = FindOrCreateRoot(scene, ENEMIES_GROUP_NAME),
+                coins = FindOrCreateRoot(scene, COINS_GROUP_NAME),
+                hazards = FindOrCreateRoot(scene, HAZARDS_GROUP_NAME)
+            };
+        }
+
+        static Transform FindOrCreateRoot(Scene scene, string name)
+        {
+            GameObject root = FindRoot(scene, name);
+            if (root != null)
+                return root.transform;
+
+            root = new GameObject(name);
+            SceneManager.MoveGameObjectToScene(root, scene);
+            return root.transform;
+        }
+
+        static void DraftLevel(int templateIndex, LevelGroups groups)
+        {
+            switch (templateIndex)
+            {
+                case 0:
+                    DraftRooftops(groups);
+                    break;
+                case 1:
+                    DraftWarehouse(groups);
+                    break;
+                case 2:
+                    DraftFoundry(groups);
+                    break;
+                case 3:
+                    DraftFinale(groups);
+                    break;
+            }
+        }
+
+        static void DraftRooftops(LevelGroups groups)
+        {
+            PlaceAll(PLATFORM_PREFAB_PATH, "Roof", groups.platforms, new[]
+            {
+                new Vector3(14f, 1f, 0f), new Vector3(20f, 2.5f, 0f), new Vector3(26f, 1.5f, 0f),
+                new Vector3(32f, 3f, 0f), new Vector3(38f, 2f, 0f), new Vector3(44f, 1f, 0f)
+            });
+            PlaceAll(ENEMY_PREFAB_PATH, "Enemy", groups.enemies, new[]
+            {
+                new Vector3(6f, 1f, 0f), new Vector3(20f, 4f, 0f), new Vector3(32f, 4.5f, 0f),
+                new Vector3(44f, 2.5f, 0f), new Vector3(51f, 1f, 0f), new Vector3(54f, 1f, 0f)
+            });
+            PlaceAll(COIN_PREFAB_PATH, "Coin", groups.coins, new[]
+            {
+                new Vector3(3f, 2f, 0f), new Vector3(17f, 3.5f, 0f), new Vector3(23f, 4.5f, 0f), new Vector3(29f, 4f, 0f),
+                new Vector3(35f, 5f, 0f), new Vector3(41f, 4f, 0f), new Vector3(47f, 3f, 0f)
+            });
+        }
+
+        static void DraftWarehouse(LevelGroups groups)
+        {
+            PlaceMovingPlatform(groups.platforms, "Lift_1", new Vector3(14f, 0f, 0f), new Vector3(0f, 3f, 0f));
+            PlaceAll(PLATFORM_PREFAB_PATH, "Shelf", groups.platforms, new[]
+            {
+                new Vector3(20f, 3f, 0f), new Vector3(31f, 5.5f, 0f), new Vector3(37f, 2f, 0f)
+            });
+            PlaceMovingPlatform(groups.platforms, "Conveyor", new Vector3(25f, 3f, 0f), new Vector3(6f, 0f, 0f));
+            PlaceMovingPlatform(groups.platforms, "Lift_2", new Vector3(43f, 0.5f, 0f), new Vector3(0f, 3f, 0f));
+            PlaceAll(ENEMY_PREFAB_PATH, "Enemy", groups.enemies, new[]
+            {
+                new Vector3(4f, 1f, 0f), new Vector3(8f, 1f, 0f), new Vector3(20f, 4.5f, 0f), new Vector3(31f, 7f, 0f),
+                new Vector3(37f, 3.5f, 0f), new Vector3(50f, 1f, 0f), new Vector3(53f, 1f, 0f)
+            });
+            PlaceAll(COIN_PREFAB_PATH, "Coin", groups.coins, new[]
+            {
+                new Vector3(14f, 4f, 0f), new Vector3(20f, 5.5f, 0f), new Vector3(26f, 5f, 0f), new Vector3(29f, 5f, 0f),
+                new Vector3(32f, 4f, 0f), new Vector3(37f, 4.5f, 0f), new Vector3(43f, 4.5f, 0f), new Vector3(47f, 3f, 0f)
+            });
+        }
+
+        static void DraftFoundry(LevelGroups groups)
+        {
+            Material ground = LoadMaterial(GROUND_MATERIAL);
+            CreateBlock("Ground_Middle", groups.geometry, new Vector3(29.5f, -1f, 0f), new Vector3(39f, 2f, DEPTH), ground);
+            CreateBlock("Ceiling", groups.geometry, new Vector3(27f, 6.5f, 0f), new Vector3(10f, 1f, DEPTH), ground);
+
+            PlaceAll(SPIKES_PREFAB_PATH, "Spikes", groups.hazards, new[]
+            {
+                new Vector3(15f, 0f, 0f), new Vector3(36f, 0f, 0f), new Vector3(44f, 0f, 0f)
+            });
+            PlaceCeilingSpikes(groups.hazards, "CeilingSpikes_1", new Vector3(25f, 6f, 0f));
+            PlaceCeilingSpikes(groups.hazards, "CeilingSpikes_2", new Vector3(29f, 6f, 0f));
+            PlaceAll(SAW_PREFAB_PATH, "Saw", groups.hazards, new[]
+            {
+                new Vector3(19f, 2.5f, 0f), new Vector3(40f, 3f, 0f)
+            });
+            PlaceAll(ENEMY_PREFAB_PATH, "Enemy", groups.enemies, new[]
+            {
+                new Vector3(8f, 1f, 0f), new Vector3(12f, 1f, 0f), new Vector3(26f, 1f, 0f), new Vector3(31f, 1f, 0f),
+                new Vector3(47f, 1f, 0f), new Vector3(51f, 1f, 0f), new Vector3(54f, 1f, 0f)
+            });
+            PlaceAll(COIN_PREFAB_PATH, "Coin", groups.coins, new[]
+            {
+                new Vector3(12f, 3f, 0f), new Vector3(19f, 5f, 0f), new Vector3(27f, 3f, 0f),
+                new Vector3(33f, 3f, 0f), new Vector3(40f, 5.5f, 0f), new Vector3(47f, 3f, 0f)
+            });
+        }
+
+        static void DraftFinale(LevelGroups groups)
+        {
+            Material ground = LoadMaterial(GROUND_MATERIAL);
+            CreateBlock("Ground_Island", groups.geometry, new Vector3(45.5f, -1f, 0f), new Vector3(7f, 2f, DEPTH), ground);
+            CreateBlock("Ceiling", groups.geometry, new Vector3(38f, 6.5f, 0f), new Vector3(8f, 1f, DEPTH), ground);
+
+            PlaceAll(PLATFORM_PREFAB_PATH, "Platform", groups.platforms, new[]
+            {
+                new Vector3(14f, 1f, 0f), new Vector3(21f, 2.5f, 0f), new Vector3(35f, 2f, 0f)
+            });
+            PlaceMovingPlatform(groups.platforms, "Lift", new Vector3(28f, 1f, 0f), new Vector3(0f, 3f, 0f));
+            PlaceAll(SAW_PREFAB_PATH, "Saw", groups.hazards, new[]
+            {
+                new Vector3(24.5f, 5f, 0f), new Vector3(40f, 2.5f, 0f)
+            });
+            PlaceAll(SPIKES_PREFAB_PATH, "Spikes", groups.hazards, new[]
+            {
+                new Vector3(46f, 0f, 0f)
+            });
+            PlaceCeilingSpikes(groups.hazards, "CeilingSpikes", new Vector3(38f, 6f, 0f));
+            PlaceAll(ENEMY_PREFAB_PATH, "Enemy", groups.enemies, new[]
+            {
+                new Vector3(4f, 1f, 0f), new Vector3(8f, 1f, 0f), new Vector3(14f, 2.5f, 0f), new Vector3(21f, 4f, 0f),
+                new Vector3(35f, 3.5f, 0f), new Vector3(43f, 1f, 0f), new Vector3(50f, 1f, 0f), new Vector3(52f, 1f, 0f),
+                new Vector3(54f, 1f, 0f)
+            });
+            PlaceAll(COIN_PREFAB_PATH, "Coin", groups.coins, new[]
+            {
+                new Vector3(17f, 3.5f, 0f), new Vector3(24.5f, 3f, 0f), new Vector3(28f, 5f, 0f), new Vector3(31.5f, 4f, 0f),
+                new Vector3(38f, 4f, 0f), new Vector3(42f, 3f, 0f), new Vector3(47f, 3f, 0f)
+            });
+        }
+
+        static void PlaceAll(string prefabPath, string baseName, Transform parent, Vector3[] positions)
+        {
+            for (int i = 0; i < positions.Length; i++)
+            {
+                PlacePrefab(prefabPath, baseName + "_" + (i + 1), parent, positions[i]);
+            }
+        }
+
+        static void PlaceMovingPlatform(Transform parent, string name, Vector3 position, Vector3 travel)
+        {
+            GameObject platform = PlacePrefab(MOVING_PLATFORM_PREFAB_PATH, name, parent, position);
+            SerializedObject serialized = new SerializedObject(platform.GetComponent<MovingPlatform>());
+            serialized.FindProperty("travel").vector3Value = travel;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        static void PlaceCeilingSpikes(Transform parent, string name, Vector3 position)
+        {
+            GameObject spikes = PlacePrefab(SPIKES_PREFAB_PATH, name, parent, position);
+            spikes.transform.rotation = Quaternion.Euler(0f, 0f, 180f);
         }
 
         [MenuItem("GunJump/Build/Drop Prototype From Build")]
@@ -542,6 +756,7 @@ namespace GunJump.EditorTools
             SetReference(core, "pauseView", pauseView);
             SetReference(core, "resultView", resultView);
 
+            GameUiSetupTools.ApplyMenuStyle(root);
             SaveAsPrefab(root, LEVEL_CORE_PREFAB_PATH);
         }
 
@@ -577,13 +792,13 @@ namespace GunJump.EditorTools
             RectTransform safeArea = UiFactory.CreateSafeArea(canvas);
             Vector2 labelSize = new Vector2(700f, 70f);
 
-            TMP_Text ammo = UiFactory.CreateLabel("Ammo", safeArea, "Balas 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
+            TMP_Text ammo = UiFactory.CreateLabel("Ammo", safeArea, "Ammo 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
             UiFactory.Place(ammo.rectTransform, UiFactory.TOP_LEFT, new Vector2(40f, -40f), labelSize);
 
-            TMP_Text coins = UiFactory.CreateLabel("Coins", safeArea, "Monedas 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
+            TMP_Text coins = UiFactory.CreateLabel("Coins", safeArea, "Coins 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
             UiFactory.Place(coins.rectTransform, UiFactory.TOP_LEFT, new Vector2(40f, -110f), labelSize);
 
-            TMP_Text enemies = UiFactory.CreateLabel("Enemies", safeArea, "Enemigos 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
+            TMP_Text enemies = UiFactory.CreateLabel("Enemies", safeArea, "Enemies 0", 48f, TextAlignmentOptions.TopLeft, HUD_TEXT_COLOR);
             UiFactory.Place(enemies.rectTransform, UiFactory.TOP_LEFT, new Vector2(40f, -180f), labelSize);
 
             CommandButton pauseButton = UiFactory.CreateButton("PauseButton", safeArea, "II", 56f);
@@ -649,16 +864,16 @@ namespace GunJump.EditorTools
         {
             GameObject panel = UiFactory.CreateOverlay("PausePanel", canvas);
 
-            TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "Pausa", 96f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "Paused", 96f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(title.rectTransform, UiFactory.CENTER, new Vector2(0f, 260f), new Vector2(900f, 160f));
 
-            CommandButton resume = UiFactory.CreateButton("ResumeButton", panel.transform, "Seguir", 52f);
+            CommandButton resume = UiFactory.CreateButton("ResumeButton", panel.transform, "Resume", 52f);
             UiFactory.Place((RectTransform)resume.transform, UiFactory.CENTER, new Vector2(0f, 40f), BUTTON_SIZE);
 
-            CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Reintentar", 52f);
+            CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Retry", 52f);
             UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -150f), BUTTON_SIZE);
 
-            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menú", 52f);
+            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menu", 52f);
             UiFactory.Place((RectTransform)menu.transform, UiFactory.CENTER, new Vector2(0f, -340f), BUTTON_SIZE);
 
             SetReference(pauseView, "panel", panel);
@@ -672,7 +887,7 @@ namespace GunJump.EditorTools
         {
             GameObject panel = UiFactory.CreateOverlay("ResultPanel", canvas);
 
-            TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "¡Nivel completado!", 80f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text title = UiFactory.CreateLabel("Title", panel.transform, "Level complete!", 80f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(title.rectTransform, UiFactory.CENTER, new Vector2(0f, 460f), new Vector2(1000f, 160f));
 
             RectTransform starsRow = UiFactory.CreateRect("Stars", panel.transform);
@@ -686,25 +901,25 @@ namespace GunJump.EditorTools
                 stars[i] = star;
             }
 
-            TMP_Text coins = UiFactory.CreateLabel("Coins", panel.transform, "+0 monedas", 64f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text coins = UiFactory.CreateLabel("Coins", panel.transform, "+0 coins", 64f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(coins.rectTransform, UiFactory.CENTER, new Vector2(0f, 80f), new Vector2(900f, 100f));
 
-            TMP_Text multiplier = UiFactory.CreateLabel("Multiplier", panel.transform, "Multiplicador x1", 44f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text multiplier = UiFactory.CreateLabel("Multiplier", panel.transform, "Multiplier x1", 44f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(multiplier.rectTransform, UiFactory.CENTER, new Vector2(0f, -10f), new Vector2(900f, 80f));
 
-            TMP_Text score = UiFactory.CreateLabel("Score", panel.transform, "Puntaje 0", 44f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text score = UiFactory.CreateLabel("Score", panel.transform, "Score 0", 44f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(score.rectTransform, UiFactory.CENTER, new Vector2(0f, -90f), new Vector2(900f, 80f));
 
-            CommandButton next = UiFactory.CreateButton("NextButton", panel.transform, "Siguiente nivel", 52f);
+            CommandButton next = UiFactory.CreateButton("NextButton", panel.transform, "Next level", 52f);
             UiFactory.Place((RectTransform)next.transform, UiFactory.CENTER, new Vector2(0f, -240f), BUTTON_SIZE);
 
-            CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Reintentar", 52f);
+            CommandButton retry = UiFactory.CreateButton("RetryButton", panel.transform, "Retry", 52f);
             UiFactory.Place((RectTransform)retry.transform, UiFactory.CENTER, new Vector2(0f, -420f), BUTTON_SIZE);
 
-            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menú", 52f);
+            CommandButton menu = UiFactory.CreateButton("MenuButton", panel.transform, "Menu", 52f);
             UiFactory.Place((RectTransform)menu.transform, UiFactory.CENTER, new Vector2(-155f, -600f), HALF_BUTTON_SIZE);
 
-            CommandButton shop = UiFactory.CreateButton("ShopButton", panel.transform, "Tienda", 52f);
+            CommandButton shop = UiFactory.CreateButton("ShopButton", panel.transform, "Shop", 52f);
             UiFactory.Place((RectTransform)shop.transform, UiFactory.CENTER, new Vector2(155f, -600f), HALF_BUTTON_SIZE);
 
             SetReference(resultView, "panel", panel);
@@ -737,7 +952,7 @@ namespace GunJump.EditorTools
             Image background = UiFactory.CreateImage("Background", canvas.transform, LOADING_COLOR, true);
             UiFactory.Stretch(background.rectTransform);
 
-            TMP_Text label = UiFactory.CreateLabel("Label", canvas.transform, "Cargando", 64f, TextAlignmentOptions.Center, Color.white);
+            TMP_Text label = UiFactory.CreateLabel("Label", canvas.transform, "Loading", 64f, TextAlignmentOptions.Center, Color.white);
             UiFactory.Place(label.rectTransform, UiFactory.CENTER, new Vector2(0f, 60f), new Vector2(900f, 120f));
 
             Image bar = UiFactory.CreateImage("Bar", canvas.transform, new Color(1f, 1f, 1f, 0.2f), false);
@@ -1294,6 +1509,15 @@ namespace GunJump.EditorTools
                 property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
 
             serialized.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        struct LevelGroups
+        {
+            public Transform geometry;
+            public Transform platforms;
+            public Transform enemies;
+            public Transform coins;
+            public Transform hazards;
         }
     }
 }

@@ -30,7 +30,8 @@ El jugador no maneja un personaje: maneja un arma. Cada toque en la pantalla dis
 | Flujo de al menos 3 escenas | `MainMenu` → `Loading` → `Level1`…`Level5`. |
 | UI adaptativa y áreas seguras | `CanvasScaler` por resolución de referencia y `UI/SafeArea/SafeAreaFitter.cs` en todo lo que toca los bordes. |
 | Plugin nativo accesible desde la primera pantalla | Botón **LOGS** del menú principal: muestra los logs que guarda el plugin y permite borrarlos. |
-| Logros y Leaderboard (Google Play Games) | 6 logros y el leaderboard *Total Score*. Se ven desde los botones **LOGROS** y **TOP** del menú. |
+| Logros y Leaderboard (Google Play Games) | 6 logros y el leaderboard *Total Score*. Se ven desde los botones **AWARDS** y **TOP** del menú. |
+| Idioma | Todos los textos del juego están en inglés. |
 | Botón Atrás de Android | En un nivel pausa y reanuda. En los submenús vuelve. En la pantalla principal pregunta antes de salir. |
 
 ## Patrones de diseño

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="kuznicki_logger_clear_title">Borrar logs</string>
-    <string name="kuznicki_logger_clear_message">¿Seguro que querés borrar todos los logs guardados? No se puede deshacer.</string>
-    <string name="kuznicki_logger_clear_confirm">Borrar</string>
-    <string name="kuznicki_logger_clear_cancel">Cancelar</string>
+    <string name="kuznicki_logger_clear_title">Clear logs</string>
+    <string name="kuznicki_logger_clear_message">Delete every saved log? This cannot be undone.</string>
+    <string name="kuznicki_logger_clear_confirm">Clear</string>
+    <string name="kuznicki_logger_clear_cancel">Cancel</string>
 </resources>

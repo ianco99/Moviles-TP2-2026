@@ -32,7 +32,7 @@ namespace GunJump.UI
                 return;
 
             shownAmmo = ammo;
-            ammoLabel.SetText("Balas {0}", ammo);
+            ammoLabel.SetText("Ammo {0}", ammo);
         }
 
         public void SetCoins(int coins)
@@ -41,7 +41,7 @@ namespace GunJump.UI
                 return;
 
             shownCoins = coins;
-            coinsLabel.SetText("Monedas {0}", coins);
+            coinsLabel.SetText("Coins {0}", coins);
         }
 
         public void ShowHint(string text, bool showTap)
@@ -63,7 +63,7 @@ namespace GunJump.UI
                 return;
 
             shownEnemies = remaining;
-            enemiesLabel.SetText("Enemigos {0}", remaining);
+            enemiesLabel.SetText("Enemies {0}", remaining);
         }
     }
 }
