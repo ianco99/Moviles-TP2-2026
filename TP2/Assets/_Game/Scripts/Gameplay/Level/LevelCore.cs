@@ -105,6 +105,7 @@ namespace GunJump.Gameplay
             LoadMenuCommand toLevelSelect = new LoadMenuCommand(loader, menuBuildIndex, MenuScreen.LevelSelect);
 
             input.Init(commands, new FireCommand(gun, session));
+            input.SetBackCommand(new LevelBackCommand(this));
             hud.PauseButton.Bind(commands, new SetPausedCommand(this, true));
             pauseView.ResumeButton.Bind(commands, new SetPausedCommand(this, false));
             pauseView.RetryButton.Bind(commands, retry);
@@ -134,6 +135,20 @@ namespace GunJump.Gameplay
 
             if (!session.IsPlaying)
                 Finish();
+        }
+
+        public void HandleBack()
+        {
+            if (LevelLoader.IsLoading)
+                return;
+
+            if (finished)
+            {
+                LevelLoader.LoadMenu(menuBuildIndex, MenuScreen.LevelSelect);
+                return;
+            }
+
+            SetPaused(!isPaused);
         }
 
         public void SetPaused(bool paused)

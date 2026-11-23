@@ -94,6 +94,17 @@ namespace GunJump.Core
             }
         }
 
+        public void UnloadKeepingLoadedAssets()
+        {
+            assets.Clear();
+
+            if (bundle == null)
+                return;
+
+            bundle.Unload(false);
+            bundle = null;
+        }
+
         public bool TryGetLoaded<AssetType>(string assetName, out AssetType asset) where AssetType : Object
         {
             asset = assets.TryGetValue(assetName, out Object cached) ? cached as AssetType : null;
@@ -150,14 +161,11 @@ namespace GunJump.Core
                 return;
             }
 
-            if (!(asset is GameObject model))
+            if (!(asset is GameObject))
                 return;
 
-            foreach (Renderer renderer in model.GetComponentsInChildren<Renderer>(true))
-            {
-                foreach (Material shared in renderer.sharedMaterials)
-                    UseEditorShader(shared);
-            }
+            foreach (Material loaded in Resources.FindObjectsOfTypeAll<Material>())
+                UseEditorShader(loaded);
         }
 
         static void UseEditorShader(Material material)
@@ -166,7 +174,7 @@ namespace GunJump.Core
                 return;
 
             Shader editorShader = Shader.Find(material.shader.name);
-            if (editorShader != null)
+            if (editorShader != null && editorShader != material.shader)
                 material.shader = editorShader;
         }
 #endif

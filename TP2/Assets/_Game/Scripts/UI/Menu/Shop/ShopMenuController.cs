@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using _Game.Scripts.Economy;
 using GunJump.Core;
@@ -12,7 +13,8 @@ namespace _Game.Scripts.Shop
 {
     public class ShopMenuController : MonoBehaviour
     {
-        [SerializeField] private ShopItemView itemPrefab;
+        [Tooltip("Nombre del prefab del item de la tienda en el AssetBundle 'prefabs' (carpeta Prefabs/Runtime).")]
+        [SerializeField] private string itemAssetName = "ShopItem";
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private GridLayoutGroup grid;
         [SerializeField] private int initialPoolSize = 20;
@@ -24,6 +26,9 @@ namespace _Game.Scripts.Shop
 
         private readonly List<ShopItemView> pool = new List<ShopItemView>();
         private ShopCategory currentCategory = ShopCategory.Guns;
+        private ShopItemView itemPrefab;
+        private bool isShowPending;
+        private ContentLibrary content;
         private PlayerWalletManager wallet;
         private PlayerInventoryManager inventory;
         private PlayerEquipment equipment;
@@ -34,17 +39,34 @@ namespace _Game.Scripts.Shop
         private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
         private MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
+        private ContentLibrary Content => content ??= ServiceProvider.Instance.GetService<ContentLibrary>();
 
-        public void Setup()
+        public IEnumerator Setup()
         {
-            if (pool.Count > 0)
+            if (itemPrefab != null)
             {
-                return;
+                yield break;
+            }
+
+            ContentBundle bundle = Content.Get(ContentLibrary.PREFABS_BUNDLE);
+            yield return bundle.LoadBundle();
+            yield return bundle.LoadAsset<GameObject>(itemAssetName, loaded => itemPrefab = loaded != null ? loaded.GetComponent<ShopItemView>() : null);
+
+            if (itemPrefab == null)
+            {
+                Debug.LogError($"ShopMenuController: el AssetBundle '{ContentLibrary.PREFABS_BUNDLE}' no tiene un prefab '{itemAssetName}' con ShopItemView.", this);
+                yield break;
             }
 
             for (int i = 0; i < initialPoolSize; i++)
             {
                 AddToPool();
+            }
+
+            if (isShowPending)
+            {
+                isShowPending = false;
+                ShowCategory();
             }
         }
 
@@ -55,6 +77,12 @@ namespace _Game.Scripts.Shop
 
         public void ShowCategory()
         {
+            if (itemPrefab == null)
+            {
+                isShowPending = true;
+                return;
+            }
+
             ShowItems(catalog.GetItems(currentCategory));
         }
 

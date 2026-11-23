@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using _Game.Scripts.Economy;
@@ -13,18 +14,31 @@ namespace GunJump.UI
     {
         [SerializeField] private LevelListSO levelListSO;
         [SerializeField] private GridLayoutGroup gridLayoutGroup;
-        [Tooltip("Botón de cada nivel, con sus estrellas. Se arma con GunJump > UI > Setup Level Select.")]
-        [SerializeField] private LevelButtonView levelButton;
+        [Tooltip("Nombre del prefab del botón de nivel en el AssetBundle 'prefabs' (carpeta Prefabs/Runtime). Se arma con GunJump > UI > Setup Level Select.")]
+        [SerializeField] private string levelButtonAssetName = "LevelButton";
 
         private LevelLoader levelLoader;
         private PlayerLevelProgress levelProgress;
+        private ContentLibrary content;
 
         private LevelLoader LevelLoader => levelLoader ??= ServiceProvider.Instance.GetService<LevelLoader>();
         private PlayerLevelProgress LevelProgress => levelProgress ??= ServiceProvider.Instance.GetService<PlayerLevelProgress>();
+        private ContentLibrary Content => content ??= ServiceProvider.Instance.GetService<ContentLibrary>();
 
         //TODO: Optimize with asset batching/asset
-        public void Setup()
+        public IEnumerator Setup()
         {
+            LevelButtonView levelButton = null;
+            ContentBundle bundle = Content.Get(ContentLibrary.PREFABS_BUNDLE);
+            yield return bundle.LoadBundle();
+            yield return bundle.LoadAsset<GameObject>(levelButtonAssetName, loaded => levelButton = loaded != null ? loaded.GetComponent<LevelButtonView>() : null);
+
+            if (levelButton == null)
+            {
+                Debug.LogError($"LevelsMenuController: el AssetBundle '{ContentLibrary.PREFABS_BUNDLE}' no tiene un prefab '{levelButtonAssetName}' con LevelButtonView.", this);
+                yield break;
+            }
+
             List<int> buildIndices = levelListSO.levelBuildIDs;
             bool isPreviousCompleted = true;
 

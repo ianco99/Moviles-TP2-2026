@@ -60,7 +60,7 @@ namespace _Game.Scripts.Bootstrap
 
             if (!services.ContainsService<ContentLibrary>())
             {
-                services.AddService<ContentLibrary>(new ContentLibrary());
+                services.AddService<ContentLibrary>(new ContentLibrary(services.GetService<EventBus>()));
             }
 
             if (services.ContainsService<PlayerWalletManager>())

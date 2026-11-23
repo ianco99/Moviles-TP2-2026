@@ -75,6 +75,7 @@ namespace GunJump.EditorTools
         const string VIBRATION_ICON_PATH = ICONS_FOLDER + "/icon_vibration.png";
         const string HAPTICS_TUNING_PATH = ROOT + "/Data/Tuning/HapticsTuning.asset";
         const string PLAY_GAMES_AREA_NAME = "PlayGamesButtonArea";
+        const string QUIT_PANEL_NAME = "QuitPanel";
         const string BOOTSTRAPPER_TYPE_NAME = "Bootstrapper";
         const int LOGS_SLOT = 0;
         const int ACHIEVEMENTS_SLOT = 1;
@@ -83,7 +84,7 @@ namespace GunJump.EditorTools
         const int TOGGLE_COUNT = 3;
 
         const string BUTTON_PREFAB_PATH = ROOT + "/Prefabs/Menu/Button.prefab";
-        const string LEVEL_BUTTON_PATH = ROOT + "/Prefabs/Menu/LevelSelect/LevelButton.prefab";
+        const string LEVEL_BUTTON_PATH = ROOT + "/Prefabs/Runtime/LevelButton.prefab";
         const string LEVEL_STARS_NAME = "Stars";
         const string LEVELS_BACK_AREA_NAME = "LevelsBackArea";
         const float LEVEL_STAR_SIZE = 26f;
@@ -145,6 +146,65 @@ namespace GunJump.EditorTools
             string result = AddLogsScreen(scene);
             Close(scene, wasOpen);
             Debug.Log($"GunJump: {result}");
+        }
+
+        [MenuItem("GunJump/UI/Setup Quit Prompt")]
+        public static void SetupQuitPrompt()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("GunJump", "Salí de Play antes de correr Setup Quit Prompt.", "OK");
+                return;
+            }
+
+            if (!File.Exists(MAIN_MENU_SCENE_PATH))
+            {
+                EditorUtility.DisplayDialog("GunJump", $"No existe {MAIN_MENU_SCENE_PATH}.", "OK");
+                return;
+            }
+
+            Scene scene = Open(MAIN_MENU_SCENE_PATH, out bool wasOpen);
+            string result = AddQuitPrompt(scene);
+            Close(scene, wasOpen);
+            Debug.Log($"GunJump: {result}");
+        }
+
+        static string AddQuitPrompt(Scene scene)
+        {
+            MainMenuController mainMenu = FindInScene<MainMenuController>(scene);
+            if (mainMenu == null)
+                return "MainMenu no tiene MainMenuController: no se armó el cartel de salir.";
+
+            Transform oldPanel = mainMenu.transform.Find(QUIT_PANEL_NAME);
+            if (oldPanel != null)
+            {
+                if (!EditorUtility.DisplayDialog("GunJump", "MainMenu ya tiene el cartel de salir. ¿Reconstruirlo?", "Reconstruir", "Dejarlo"))
+                    return "el cartel de salir quedó como estaba.";
+
+                Object.DestroyImmediate(oldPanel.gameObject);
+            }
+
+            GameObject overlay = UiFactory.CreateOverlay(QUIT_PANEL_NAME, mainMenu.transform);
+            overlay.transform.SetAsLastSibling();
+
+            Image box = UiFactory.CreateImage("Box", overlay.transform, PANEL_COLOR, false);
+            box.sprite = AssetDatabase.GetBuiltinExtraResource<Sprite>(PANEL_SPRITE_NAME);
+            box.type = Image.Type.Sliced;
+            UiFactory.Place(box.rectTransform, UiFactory.CENTER, Vector2.zero, PANEL_SIZE);
+
+            TMP_Text title = CreateMenuLabel("Title", box.transform, "¿SALIR DEL JUEGO?", TITLE_FONT_SIZE);
+            UiFactory.Place(title.rectTransform, UiFactory.CENTER, TITLE_POSITION, TITLE_SIZE);
+
+            Button confirm = CreateChoice("YesButton", box.transform, "SÍ", CONFIRM_COLOR, -CHOICE_OFFSET_X);
+            Button cancel = CreateChoice("NoButton", box.transform, "NO", CANCEL_COLOR, CHOICE_OFFSET_X);
+
+            GameSceneBuilder.SetReference(mainMenu, "quitPanel", overlay);
+            GameSceneBuilder.SetReference(mainMenu, "quitConfirmButton", confirm);
+            GameSceneBuilder.SetReference(mainMenu, "quitCancelButton", cancel);
+            overlay.SetActive(false);
+
+            Save(scene);
+            return "cartel de salir agregado a MainMenu y conectado a MainMenuController.";
         }
 
         [MenuItem("GunJump/UI/Setup Play Games and Vibration")]
@@ -309,15 +369,15 @@ namespace GunJump.EditorTools
                 && !EditorUtility.DisplayDialog("GunJump", "La selección de nivel ya está armada. ¿Reconstruir el botón de nivel y el de volver?", "Reconstruir", "Cancelar"))
                 return;
 
-            LevelButtonView levelButton = BuildLevelButtonPrefab();
+            BuildLevelButtonPrefab();
 
             Scene scene = Open(MAIN_MENU_SCENE_PATH, out bool wasOpen);
-            string result = AddLevelSelectBack(scene, levelButton);
+            string result = AddLevelSelectBack(scene);
             Close(scene, wasOpen);
             Debug.Log($"GunJump: {result}");
         }
 
-        static LevelButtonView BuildLevelButtonPrefab()
+        static void BuildLevelButtonPrefab()
         {
             if (!File.Exists(LEVEL_BUTTON_PATH))
             {
@@ -369,18 +429,18 @@ namespace GunJump.EditorTools
 
             PrefabUtility.SaveAsPrefabAsset(contents, LEVEL_BUTTON_PATH);
             PrefabUtility.UnloadPrefabContents(contents);
-
-            return Load<GameObject>(LEVEL_BUTTON_PATH).GetComponent<LevelButtonView>();
         }
 
-        static string AddLevelSelectBack(Scene scene, LevelButtonView levelButton)
+        static string AddLevelSelectBack(Scene scene)
         {
             MainMenuController mainMenu = FindInScene<MainMenuController>(scene);
             LevelsMenuController levelsMenu = FindInScene<LevelsMenuController>(scene);
             if (mainMenu == null || levelsMenu == null)
                 return "MainMenu no tiene MainMenuController o LevelsMenuController: no se armó la selección de nivel.";
 
-            GameSceneBuilder.SetReference(levelsMenu, "levelButton", levelButton);
+            SerializedObject serializedLevels = new SerializedObject(levelsMenu);
+            serializedLevels.FindProperty("levelButtonAssetName").stringValue = Path.GetFileNameWithoutExtension(LEVEL_BUTTON_PATH);
+            serializedLevels.ApplyModifiedPropertiesWithoutUndo();
 
             Transform oldArea = levelsMenu.transform.Find(LEVELS_BACK_AREA_NAME);
             if (oldArea != null)

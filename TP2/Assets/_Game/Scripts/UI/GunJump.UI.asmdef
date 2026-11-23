@@ -5,6 +5,7 @@
         "GunJump.Core",
         "GunJump.Economy",
         "GunJump.Platform",
+        "Unity.InputSystem",
         "Unity.TextMeshPro",
         "UnityEngine.UI"
     ],

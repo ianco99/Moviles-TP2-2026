@@ -7,6 +7,7 @@ using GunJump.Platform;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 namespace GunJump.UI
@@ -24,6 +25,12 @@ namespace GunJump.UI
         [SerializeField] private Button achievementsButton;
         [Tooltip("Abre el leaderboard Total Score de Play Games.")]
         [SerializeField] private Button leaderboardButton;
+
+        [Header("Quit")]
+        [Tooltip("Cartel de salir que abre el botón Atrás de Android en la pantalla principal. Se arma con GunJump > UI > Setup Quit Prompt.")]
+        [SerializeField] private GameObject quitPanel;
+        [SerializeField] private Button quitConfirmButton;
+        [SerializeField] private Button quitCancelButton;
 
         [Header("References")]
         [SerializeField] private GameObject landingMenu;
@@ -55,9 +62,12 @@ namespace GunJump.UI
             logsBackButton.onClick.AddListener(LogsBackClicked);
             achievementsButton.onClick.AddListener(AchievementsClicked);
             leaderboardButton.onClick.AddListener(LeaderboardClicked);
+            quitConfirmButton.onClick.AddListener(QuitConfirmed);
+            quitCancelButton.onClick.AddListener(QuitCanceled);
+            quitPanel.SetActive(false);
 
-            levelSelectMenu.Setup();
-            shopMenu.Setup();
+            StartCoroutine(levelSelectMenu.Setup());
+            StartCoroutine(shopMenu.Setup());
         }
 
         private void Start()
@@ -65,6 +75,42 @@ namespace GunJump.UI
             EventBus.Raise<ShowMoneyCountEvent>();
             EventBus.Raise<ShowGunPreviewEvent>();
             OpenRequestedScreen();
+        }
+
+        private void Update()
+        {
+            Keyboard keyboard = Keyboard.current;
+            if (picked || keyboard == null || !keyboard.escapeKey.wasPressedThisFrame)
+                return;
+
+            if (levelSelectMenu.gameObject.activeSelf)
+                StartCoroutine(WaitForAnim("LevelsBack"));
+            else if (shopMenu.gameObject.activeSelf)
+                StartCoroutine(WaitForAnim("ShopBack"));
+            else if (logsMenu.gameObject.activeSelf)
+                StartCoroutine(WaitForAnim("LogsBack"));
+            else if (quitPanel.activeSelf)
+                QuitCanceled();
+            else
+                OpenQuitPrompt();
+        }
+
+        private void OpenQuitPrompt()
+        {
+            GameAudio.Play(SoundId.ButtonClick);
+            quitPanel.SetActive(true);
+        }
+
+        private void QuitConfirmed()
+        {
+            GameAudio.Play(SoundId.ButtonClick);
+            Application.Quit();
+        }
+
+        private void QuitCanceled()
+        {
+            GameAudio.Play(SoundId.ButtonClick);
+            quitPanel.SetActive(false);
         }
 
         private void OpenRequestedScreen()

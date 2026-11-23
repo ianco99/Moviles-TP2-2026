@@ -24,6 +24,7 @@ namespace GunJump.EditorTools
             new BundleSource(ShopCategory.GunSkins, "Assets/_Game/Art/Materials/Skins", "t:Material", required: false),
             new BundleSource(ShopCategory.Bullets, "Assets/_Game/Prefabs/Loadout/Bullets", "t:Prefab", required: false),
             new BundleSource(ShopCategory.ShotVFX, "Assets/_Game/Prefabs/Loadout/ShotVfx", "t:Prefab", required: false),
+            new BundleSource(ContentLibrary.PREFABS_BUNDLE, "Assets/_Game/Prefabs/Runtime", "t:Prefab", required: true),
         };
 
         public override int callbackOrder => 0;
@@ -95,12 +96,12 @@ namespace GunJump.EditorTools
             Directory.CreateDirectory(output);
 
             List<AssetBundleBuild> builds = new List<AssetBundleBuild>(Sources.Length);
-            Dictionary<ShopCategory, HashSet<string>> contents = new Dictionary<ShopCategory, HashSet<string>>();
+            Dictionary<string, HashSet<string>> contents = new Dictionary<string, HashSet<string>>();
 
             foreach (BundleSource source in Sources)
             {
                 HashSet<string> assetNames = source.FindAssetNames(out AssetBundleBuild build);
-                contents.Add(source.Category, assetNames);
+                contents.Add(source.BundleName, assetNames);
 
                 if (assetNames.Count > 0)
                 {
@@ -113,7 +114,7 @@ namespace GunJump.EditorTools
                 else
                 {
                     Debug.Log($"AssetBundle '{source.BundleName}': no hay contenido en {source.Folder}; " +
-                              $"los items de {source.Category} usan lo que el arma trae por defecto.");
+                              "los items de la tienda que lo usan toman lo que el arma trae por defecto.");
                 }
             }
 
@@ -137,7 +138,7 @@ namespace GunJump.EditorTools
             return output;
         }
 
-        private static void ValidateCatalogs(Dictionary<ShopCategory, HashSet<string>> contents)
+        private static void ValidateCatalogs(Dictionary<string, HashSet<string>> contents)
         {
             foreach (string guid in AssetDatabase.FindAssets("t:ShopCatalog"))
             {
@@ -146,7 +147,12 @@ namespace GunJump.EditorTools
 
                 foreach (BundleSource source in Sources)
                 {
-                    HashSet<string> assetNames = contents[source.Category];
+                    if (!source.IsShopContent)
+                    {
+                        continue;
+                    }
+
+                    HashSet<string> assetNames = contents[source.BundleName];
 
                     if (assetNames.Count == 0)
                     {
@@ -184,6 +190,8 @@ namespace GunJump.EditorTools
         internal sealed class BundleSource
         {
             public readonly ShopCategory Category;
+            public readonly string BundleName;
+            public readonly bool IsShopContent;
             public readonly string Folder;
             public readonly string Filter;
             public readonly bool Required;
@@ -191,12 +199,21 @@ namespace GunJump.EditorTools
             public BundleSource(ShopCategory category, string folder, string filter, bool required)
             {
                 Category = category;
+                BundleName = ShopBundles.For(category);
+                IsShopContent = true;
                 Folder = folder;
                 Filter = filter;
                 Required = required;
             }
 
-            public string BundleName => ShopBundles.For(Category);
+            public BundleSource(string bundleName, string folder, string filter, bool required)
+            {
+                BundleName = bundleName;
+                IsShopContent = false;
+                Folder = folder;
+                Filter = filter;
+                Required = required;
+            }
 
             public bool HasContent => AssetDatabase.IsValidFolder(Folder) &&
                                       AssetDatabase.FindAssets(Filter, new[] { Folder }).Length > 0;

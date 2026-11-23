@@ -18,11 +18,17 @@ namespace GunJump.Gameplay
         PointerEventData pointerData;
         CommandInvoker invoker;
         ICommand fireCommand;
+        ICommand backCommand;
 
         public void Init(CommandInvoker commandInvoker, ICommand fire)
         {
             invoker = commandInvoker;
             fireCommand = fire;
+        }
+
+        public void SetBackCommand(ICommand back)
+        {
+            backCommand = back;
         }
 
         void OnEnable()
@@ -37,6 +43,10 @@ namespace GunJump.Gameplay
 
         void Update()
         {
+            Keyboard keyboard = Keyboard.current;
+            if (backCommand != null && keyboard != null && keyboard.escapeKey.wasPressedThisFrame)
+                invoker.Execute(backCommand, Time.unscaledTime);
+
             if (fireCommand == null)
                 return;
 

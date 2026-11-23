@@ -41,7 +41,7 @@ namespace GunJump.EditorTools
         const string SAW_PREFAB_PATH = ROOT + "/Prefabs/Level/Saw.prefab";
         const string SPIKES_PREFAB_PATH = ROOT + "/Prefabs/Level/Spikes.prefab";
         const string TUTORIAL_ZONE_PREFAB_PATH = ROOT + "/Prefabs/Level/TutorialZone.prefab";
-        const string BULLET_PREFAB_PATH = ROOT + "/Prefabs/Bullets/Bullet.prefab";
+        const string BULLET_PREFAB_PATH = ROOT + "/Prefabs/Runtime/Bullet.prefab";
 
         const string GUN_TUNING_PATH = ROOT + "/Data/Tuning/GunTuning.asset";
         const string CAMERA_TUNING_PATH = ROOT + "/Data/Tuning/CameraTuning.asset";
