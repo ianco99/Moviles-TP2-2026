@@ -202,6 +202,31 @@ namespace GunJump.EditorTools
                       $"Plantillas nuevas: {templatesResult}. Level1 a Level5 quedaron en Build Settings y en LevelListSO.");
         }
 
+        [MenuItem("GunJump/Build/Drop Prototype From Build")]
+        public static void DropPrototypeFromBuild()
+        {
+            List<EditorBuildSettingsScene> scenes = new List<EditorBuildSettingsScene>();
+            bool wasInBuild = false;
+
+            foreach (EditorBuildSettingsScene scene in EditorBuildSettings.scenes)
+            {
+                if (scene.path == PROTOTYPE_SCENE_PATH)
+                {
+                    wasInBuild = true;
+                    continue;
+                }
+
+                scenes.Add(scene);
+            }
+
+            EditorBuildSettings.scenes = scenes.ToArray();
+            RegisterLevels();
+            AssetDatabase.SaveAssets();
+            Debug.Log(wasInBuild
+                ? "GunJump: Prototype salió de Build Settings y LevelListSO apunta a los nuevos índices de Level1 a Level5."
+                : "GunJump: Prototype no estaba en Build Settings; LevelListSO quedó actualizado igual.");
+        }
+
         [MenuItem("GunJump/Build/Gun Rig (from Prototype)")]
         public static void BuildGunRigOnly()
         {

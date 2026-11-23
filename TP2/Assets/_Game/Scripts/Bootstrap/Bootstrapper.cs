@@ -20,6 +20,8 @@ namespace _Game.Scripts.Bootstrap
         [SerializeField] private string loadingScene = "Loading";
         [Tooltip("Clips y volúmenes del juego. Se crea y se asigna con GunJump > Audio > Setup Audio.")]
         [SerializeField] private AudioLibrary audioLibrary;
+        [Tooltip("Duración e intensidad de cada vibración. Se crea y se asigna con GunJump > UI > Setup Play Games and Vibration.")]
+        [SerializeField] private HapticsTuning hapticsTuning;
 
         private void Awake()
         {
@@ -29,7 +31,9 @@ namespace _Game.Scripts.Bootstrap
 
             if (!services.ContainsService<MobilePlatform>())
             {
-                services.AddService<MobilePlatform>(new MobilePlatform());
+                MobilePlatform mobilePlatform = new MobilePlatform();
+                services.AddService<MobilePlatform>(mobilePlatform);
+                mobilePlatform.Init(hapticsTuning);
             }
 
             if (!services.ContainsService<EventBus>())

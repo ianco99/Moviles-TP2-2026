@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb9866376d811bc4f9e4a34af7acf18f, type: 3}
+  m_Name: HapticsTuning
+  m_EditorClassIdentifier: GunJump.Platform::GunJump.Platform.HapticsTuning
+  pulses:
+  - pulse: 0
+    milliseconds: 15
+    amplitude: 80
+  - pulse: 1
+    milliseconds: 35
+    amplitude: 180
+  - pulse: 2
+    milliseconds: 70
+    amplitude: 255

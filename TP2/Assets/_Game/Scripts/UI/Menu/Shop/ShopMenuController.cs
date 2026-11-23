@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using _Game.Scripts.Economy;
 using GunJump.Core;
+using GunJump.Platform;
 using GunJump.UI;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
@@ -19,6 +20,8 @@ namespace _Game.Scripts.Shop
         [Header("Items")]
         [SerializeField] private ShopCatalog catalog;
 
+        private const int ARSENAL_GUN_COUNT = 3;
+
         private readonly List<ShopItemView> pool = new List<ShopItemView>();
         private ShopCategory currentCategory = ShopCategory.Guns;
         private PlayerWalletManager wallet;
@@ -30,6 +33,7 @@ namespace _Game.Scripts.Shop
         private PlayerInventoryManager Inventory => inventory ??= ServiceProvider.Instance.GetService<PlayerInventoryManager>();
         private PlayerEquipment Equipment => equipment ??= ServiceProvider.Instance.GetService<PlayerEquipment>();
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
+        private MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
 
         public void Setup()
         {
@@ -109,12 +113,31 @@ namespace _Game.Scripts.Shop
                 Inventory.Add(item);
                 EventBus.Raise<ShowMoneyCountEvent>();
                 bought = true;
+                CheckArsenal();
             }
 
             GameAudio.Play(bought ? SoundId.ShopBuy : SoundId.ShopEquip);
             Equipment.Equip(item);
             RefreshStates();
             EventBus.Raise<EquippedItemChangedEvent>();
+        }
+
+        private void CheckArsenal()
+        {
+            int ownedGuns = 0;
+
+            foreach (ShopItem gun in catalog.GetItems(ShopCategory.Guns))
+            {
+                if (Inventory.Owns(gun))
+                {
+                    ownedGuns++;
+                }
+            }
+
+            if (ownedGuns >= ARSENAL_GUN_COUNT)
+            {
+                MobilePlatform.UnlockAchievement(Achievement.Arsenal);
+            }
         }
 
         private void RefreshStates()

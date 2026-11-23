@@ -1,5 +1,6 @@
 using _Game.Scripts.Economy;
 using GunJump.Core;
+using GunJump.Platform;
 using GunJump.UI;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -9,6 +10,7 @@ namespace GunJump.Gameplay
     public sealed class LevelCore : MonoBehaviour
     {
         const int NO_NEXT_LEVEL = -1;
+        const int STARS_PER_LEVEL = 3;
 
         [SerializeField] LevelSettings settings;
         [SerializeField] LevelRules rules;
@@ -38,6 +40,7 @@ namespace GunJump.Gameplay
         LevelLoader LevelLoader => ServiceProvider.Instance.GetService<LevelLoader>();
         PlayerWalletManager Wallet => ServiceProvider.Instance.GetService<PlayerWalletManager>();
         PlayerLevelProgress LevelProgress => ServiceProvider.Instance.GetService<PlayerLevelProgress>();
+        MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
 
         bool HasNextLevel => nextLevelBuildIndex != NO_NEXT_LEVEL;
         float PlayingTimeScale => isSlowStart ? settings.StartTimeScale : 1f;
@@ -182,6 +185,25 @@ namespace GunJump.Gameplay
             return levels.levelBuildIDs[position + 1];
         }
 
+        void ReportWin()
+        {
+            MobilePlatform platform = MobilePlatform;
+
+            if (levels.levelBuildIDs.IndexOf(gameObject.scene.buildIndex) == 0)
+                platform.UnlockAchievement(Achievement.FirstClear);
+
+            if (session.TotalEnemies > 0 && session.AllEnemiesKilled)
+                platform.UnlockAchievement(Achievement.CleanSweep);
+
+            if (session.Multiplier >= rules.TopMultiplier)
+                platform.UnlockAchievement(Achievement.TopMultiplier);
+
+            if (LevelProgress.TotalStars >= levels.levelBuildIDs.Count * STARS_PER_LEVEL)
+                platform.UnlockAchievement(Achievement.AllStars);
+
+            platform.ReportTotalScore(LevelProgress.TotalBestScore);
+        }
+
         bool RanOutOfAmmo()
         {
             if (!session.IsOutOfAmmo)
@@ -228,6 +250,7 @@ namespace GunJump.Gameplay
                 bool isFirstClear = LevelProgress.Record(levelID, stars, score);
                 reward = LevelRewards.Coins(session.Coins, session.Multiplier, isFirstClear ? economy.FirstClearBonus : 0);
                 Wallet.AddMoney(reward);
+                ReportWin();
             }
 
             resultView.Show(new ResultData(won, stars, reward, session.Multiplier, score, won && HasNextLevel));

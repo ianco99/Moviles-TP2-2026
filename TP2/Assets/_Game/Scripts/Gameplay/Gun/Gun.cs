@@ -1,5 +1,6 @@
 using _Game.Scripts.Economy;
 using GunJump.Core;
+using GunJump.Platform;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -35,6 +36,8 @@ namespace GunJump.Gameplay
         GunCustomization customization;
         EventBus eventBus;
         EventBus.EventCallback<LevelSceneLoadedEvent> levelLoadedCallback;
+
+        MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
 
         public Transform Muzzle => muzzle;
         bool IsGrounded => Time.time - lastContactTime <= tuning.GroundedGrace;
@@ -113,6 +116,7 @@ namespace GunJump.Gameplay
             strategy.Fire(this, bulletSpawner);
             customization.PlayShotEffect();
             GameAudio.Play(SoundId.Shot);
+            MobilePlatform.Vibrate(HapticPulse.Shot);
 
             if (wasGrounded)
             {

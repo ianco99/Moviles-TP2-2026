@@ -74,6 +74,18 @@ namespace GunJump.Tests
         }
 
         [Test]
+        public void Totals_AddEveryLevelBestResult()
+        {
+            PlayerLevelProgress progress = new PlayerLevelProgress();
+            progress.Record(LEVEL, 2, 300);
+            progress.Record(LEVEL, 3, 100);
+            progress.Record("Level2", 1, 250);
+
+            Assert.AreEqual(4, progress.TotalStars);
+            Assert.AreEqual(550, progress.TotalBestScore);
+        }
+
+        [Test]
         public void Restore_DoesNotRaiseChanged()
         {
             PlayerLevelProgress source = new PlayerLevelProgress();

@@ -1,4 +1,6 @@
 using GunJump.Core;
+using GunJump.Platform;
+using ianco99.ToolBox.Services;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -15,6 +17,8 @@ namespace GunJump.Gameplay
 
         public int Multiplier => multiplier;
 
+        MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
+
         public void Bind(LevelSession levelSession)
         {
             session = levelSession;
@@ -28,6 +32,7 @@ namespace GunJump.Gameplay
             hitOnce = true;
             session.RegisterMultiplier(multiplier);
             GameAudio.Play(SoundId.MultiplierHit);
+            MobilePlatform.Vibrate(HapticPulse.Multiplier);
             visual.SetActive(false);
         }
     }

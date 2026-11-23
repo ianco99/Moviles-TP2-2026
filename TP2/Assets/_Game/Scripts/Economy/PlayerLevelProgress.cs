@@ -27,6 +27,36 @@ namespace _Game.Scripts.Economy
             return StarsFor(levelID) > 0;
         }
 
+        public int TotalStars
+        {
+            get
+            {
+                int total = 0;
+
+                foreach ((int stars, int bestScore) record in recordsByLevel.Values)
+                {
+                    total += record.stars;
+                }
+
+                return total;
+            }
+        }
+
+        public long TotalBestScore
+        {
+            get
+            {
+                long total = 0;
+
+                foreach ((int stars, int bestScore) record in recordsByLevel.Values)
+                {
+                    total += record.bestScore;
+                }
+
+                return total;
+            }
+        }
+
         public bool Record(string levelID, int stars, int score)
         {
             recordsByLevel.TryGetValue(levelID, out (int stars, int bestScore) previous);

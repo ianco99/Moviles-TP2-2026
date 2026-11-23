@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using _Game.Scripts.Shop;
 using GunJump.Core;
+using GunJump.Platform;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -19,6 +20,10 @@ namespace GunJump.UI
         [SerializeField] private Button shopBackButton;
         [SerializeField] private Button logsButton;
         [SerializeField] private Button logsBackButton;
+        [Tooltip("Abre los logros de Play Games. Se arma con GunJump > UI > Setup Play Games and Vibration.")]
+        [SerializeField] private Button achievementsButton;
+        [Tooltip("Abre el leaderboard Total Score de Play Games.")]
+        [SerializeField] private Button leaderboardButton;
 
         [Header("References")]
         [SerializeField] private GameObject landingMenu;
@@ -34,9 +39,11 @@ namespace GunJump.UI
         private bool picked = false;
         private EventBus eventBus;
         private LevelLoader levelLoader;
+        private MobilePlatform mobilePlatform;
 
         private EventBus EventBus => eventBus ??= ServiceProvider.Instance.GetService<EventBus>();
         private LevelLoader LevelLoader => levelLoader ??= ServiceProvider.Instance.GetService<LevelLoader>();
+        private MobilePlatform MobilePlatform => mobilePlatform ??= ServiceProvider.Instance.GetService<MobilePlatform>();
 
         private void Awake()
         {
@@ -46,6 +53,8 @@ namespace GunJump.UI
             shopBackButton.onClick.AddListener(ShopBackClicked);
             logsButton.onClick.AddListener(LogsClicked);
             logsBackButton.onClick.AddListener(LogsBackClicked);
+            achievementsButton.onClick.AddListener(AchievementsClicked);
+            leaderboardButton.onClick.AddListener(LeaderboardClicked);
 
             levelSelectMenu.Setup();
             shopMenu.Setup();
@@ -105,6 +114,18 @@ namespace GunJump.UI
         {
             if(!picked)
                 StartCoroutine(WaitForAnim("LogsBack"));
+        }
+
+        private void AchievementsClicked()
+        {
+            GameAudio.Play(SoundId.ButtonClick);
+            MobilePlatform.ShowAchievements();
+        }
+
+        private void LeaderboardClicked()
+        {
+            GameAudio.Play(SoundId.ButtonClick);
+            MobilePlatform.ShowLeaderboard();
         }
 
         private IEnumerator WaitForAnim(string key)

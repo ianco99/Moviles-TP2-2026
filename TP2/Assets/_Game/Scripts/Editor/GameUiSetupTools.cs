@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using GunJump.Core;
+using GunJump.Platform;
 using GunJump.UI;
 using TMPro;
 using UnityEditor;
@@ -71,6 +72,16 @@ namespace GunJump.EditorTools
         const float LOGS_ROW_Y = 70f;
         const float LOGS_SCROLL_SENSITIVITY = 30f;
 
+        const string VIBRATION_ICON_PATH = ICONS_FOLDER + "/icon_vibration.png";
+        const string HAPTICS_TUNING_PATH = ROOT + "/Data/Tuning/HapticsTuning.asset";
+        const string PLAY_GAMES_AREA_NAME = "PlayGamesButtonArea";
+        const string BOOTSTRAPPER_TYPE_NAME = "Bootstrapper";
+        const int LOGS_SLOT = 0;
+        const int ACHIEVEMENTS_SLOT = 1;
+        const int LEADERBOARD_SLOT = 2;
+        const int VIBRATION_SLOT = 2;
+        const int TOGGLE_COUNT = 3;
+
         const string BUTTON_PREFAB_PATH = ROOT + "/Prefabs/Menu/Button.prefab";
         const string LEVEL_BUTTON_PATH = ROOT + "/Prefabs/Menu/LevelSelect/LevelButton.prefab";
         const string LEVEL_STARS_NAME = "Stars";
@@ -90,6 +101,9 @@ namespace GunJump.EditorTools
         static readonly Color LOGS_BACKGROUND_COLOR = new Color(0.12f, 0.12f, 0.14f, 1f);
         static readonly Color LOGS_PANEL_COLOR = new Color(0.06f, 0.06f, 0.07f, 1f);
         static readonly Vector2 LEVEL_STARS_SIZE = new Vector2(130f, 40f);
+        static readonly HapticPulse[] DEFAULT_PULSES = { HapticPulse.Shot, HapticPulse.Kill, HapticPulse.Multiplier };
+        static readonly long[] DEFAULT_PULSE_MILLISECONDS = { 15, 35, 70 };
+        static readonly int[] DEFAULT_PULSE_AMPLITUDES = { 80, 180, 255 };
 
         [MenuItem("GunJump/UI/Setup Menu Buttons")]
         public static void Setup()
@@ -131,6 +145,149 @@ namespace GunJump.EditorTools
             string result = AddLogsScreen(scene);
             Close(scene, wasOpen);
             Debug.Log($"GunJump: {result}");
+        }
+
+        [MenuItem("GunJump/UI/Setup Play Games and Vibration")]
+        public static void SetupPlayGamesAndVibration()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorUtility.DisplayDialog("GunJump", "Salí de Play antes de correr Setup Play Games and Vibration.", "OK");
+                return;
+            }
+
+            if (!File.Exists(MAIN_MENU_SCENE_PATH) || !File.Exists(AUDIO_TOGGLES_PATH))
+            {
+                EditorUtility.DisplayDialog("GunJump", $"Faltan {MAIN_MENU_SCENE_PATH} o {AUDIO_TOGGLES_PATH}. Corré antes GunJump > UI > Setup Menu Buttons.", "OK");
+                return;
+            }
+
+            HapticsTuning tuning = EnsureHapticsTuning();
+            Sprite vibrationIcon = EnsureIcon(VIBRATION_ICON_PATH, IsInsidePhone);
+            string toggles = AddVibrationToggle(vibrationIcon);
+            AssetDatabase.SaveAssets();
+
+            Scene scene = Open(MAIN_MENU_SCENE_PATH, out bool wasOpen);
+            string menu = AddPlayGamesToMainMenu(scene, tuning);
+            Close(scene, wasOpen);
+            Debug.Log($"GunJump: {toggles} {menu}");
+        }
+
+        static HapticsTuning EnsureHapticsTuning()
+        {
+            HapticsTuning existing = AssetDatabase.LoadAssetAtPath<HapticsTuning>(HAPTICS_TUNING_PATH);
+            if (existing != null)
+                return existing;
+
+            HapticsTuning tuning = ScriptableObject.CreateInstance<HapticsTuning>();
+            AssetDatabase.CreateAsset(tuning, HAPTICS_TUNING_PATH);
+
+            SerializedObject serialized = new SerializedObject(tuning);
+            SerializedProperty pulses = serialized.FindProperty("pulses");
+            pulses.arraySize = DEFAULT_PULSES.Length;
+
+            for (int i = 0; i < DEFAULT_PULSES.Length; i++)
+            {
+                SerializedProperty entry = pulses.GetArrayElementAtIndex(i);
+                entry.FindPropertyRelative("pulse").enumValueIndex = (int)DEFAULT_PULSES[i];
+                entry.FindPropertyRelative("milliseconds").longValue = DEFAULT_PULSE_MILLISECONDS[i];
+                entry.FindPropertyRelative("amplitude").intValue = DEFAULT_PULSE_AMPLITUDES[i];
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            return tuning;
+        }
+
+        static string AddVibrationToggle(Sprite vibrationIcon)
+        {
+            GameObject contents = PrefabUtility.LoadPrefabContents(AUDIO_TOGGLES_PATH);
+            bool hasToggle = contents.GetComponentInChildren<VibrationToggleButton>(true) != null;
+
+            if (!hasToggle)
+            {
+                Button button = CreateToggleButton("VibrationButton", contents.transform, vibrationIcon, VIBRATION_SLOT, out Image icon, out GameObject offMark);
+                VibrationToggleButton toggle = button.gameObject.AddComponent<VibrationToggleButton>();
+                GameSceneBuilder.SetReference(toggle, "icon", icon);
+                GameSceneBuilder.SetReference(toggle, "offMark", offMark);
+                PrefabUtility.SaveAsPrefabAsset(contents, AUDIO_TOGGLES_PATH);
+            }
+
+            PrefabUtility.UnloadPrefabContents(contents);
+            return hasToggle ? "AudioToggles ya tenía el botón de vibración." : "Botón de vibración agregado a AudioToggles.";
+        }
+
+        static string AddPlayGamesToMainMenu(Scene scene, HapticsTuning tuning)
+        {
+            MainMenuController mainMenu = FindInScene<MainMenuController>(scene);
+            if (mainMenu == null)
+                return "MainMenu no tiene MainMenuController: no se agregaron LOGROS ni TOP.";
+
+            GameObject landing = new SerializedObject(mainMenu).FindProperty("landingMenu").objectReferenceValue as GameObject;
+            if (landing == null)
+                return "MainMenuController no tiene asignado landingMenu.";
+
+            Transform oldArea = landing.transform.Find(PLAY_GAMES_AREA_NAME);
+            if (oldArea != null)
+            {
+                if (!EditorUtility.DisplayDialog("GunJump", "MainMenu ya tiene los botones LOGROS y TOP. ¿Reconstruirlos?", "Reconstruir", "Dejarlos"))
+                    return "LOGROS y TOP quedaron como estaban.";
+
+                Object.DestroyImmediate(oldArea.gameObject);
+            }
+
+            RectTransform area = UiFactory.CreateSafeArea(landing.transform);
+            area.name = PLAY_GAMES_AREA_NAME;
+            Button achievements = CreateCornerTextButton("AchievementsButton", area, "LOGROS", ACHIEVEMENTS_SLOT);
+            Button leaderboard = CreateCornerTextButton("LeaderboardButton", area, "TOP", LEADERBOARD_SLOT);
+            GameSceneBuilder.SetReference(mainMenu, "achievementsButton", achievements);
+            GameSceneBuilder.SetReference(mainMenu, "leaderboardButton", leaderboard);
+
+            MoneyCountController money = FindInScene<MoneyCountController>(scene);
+            if (money != null)
+            {
+                SerializedObject serialized = new SerializedObject(money);
+                SerializedProperty margin = serialized.FindProperty("screenMargin");
+                Vector2 value = margin.vector2Value;
+                value.x = CORNER_MARGIN + TOGGLE_COUNT * (CORNER_BUTTON_SIZE + CORNER_BUTTON_GAP);
+                margin.vector2Value = value;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+            }
+
+            Component bootstrapper = FindComponentByTypeName(scene, BOOTSTRAPPER_TYPE_NAME);
+            if (bootstrapper != null)
+                GameSceneBuilder.SetReference(bootstrapper, "hapticsTuning", tuning);
+
+            Save(scene);
+            return bootstrapper != null
+                ? "LOGROS y TOP agregados bajo LOGS, contador de monedas corrido y HapticsTuning asignado al Bootstrapper."
+                : "LOGROS y TOP agregados, pero MainMenu no tiene Bootstrapper: asigná HapticsTuning a mano.";
+        }
+
+        static Button CreateCornerTextButton(string name, Transform parent, string text, int slot)
+        {
+            Button button = CreateArtButton(name, parent, Load<Sprite>(ROUND_BUTTON_PATH), Color.white);
+            float y = -(CORNER_MARGIN + slot * (CORNER_BUTTON_SIZE + CORNER_BUTTON_GAP));
+            UiFactory.Place((RectTransform)button.transform, UiFactory.TOP_LEFT, new Vector2(CORNER_MARGIN, y),
+                new Vector2(CORNER_BUTTON_SIZE, CORNER_BUTTON_SIZE));
+
+            TMP_Text label = CreateMenuLabel("Label", button.transform, text, LOGS_BUTTON_FONT_SIZE);
+            UiFactory.Stretch(label.rectTransform);
+            label.rectTransform.sizeDelta = -LOGS_BUTTON_LABEL_PADDING;
+            return button;
+        }
+
+        static Component FindComponentByTypeName(Scene scene, string typeName)
+        {
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                foreach (MonoBehaviour behaviour in root.GetComponentsInChildren<MonoBehaviour>(true))
+                {
+                    if (behaviour != null && behaviour.GetType().Name == typeName)
+                        return behaviour;
+                }
+            }
+
+            return null;
         }
 
         [MenuItem("GunJump/UI/Setup Level Select")]
@@ -291,15 +448,7 @@ namespace GunJump.EditorTools
         {
             RectTransform area = UiFactory.CreateSafeArea(landing);
             area.name = LOGS_BUTTON_AREA_NAME;
-
-            Button button = CreateArtButton("LogsButton", area, Load<Sprite>(ROUND_BUTTON_PATH), Color.white);
-            UiFactory.Place((RectTransform)button.transform, UiFactory.TOP_LEFT, new Vector2(CORNER_MARGIN, -CORNER_MARGIN),
-                new Vector2(CORNER_BUTTON_SIZE, CORNER_BUTTON_SIZE));
-
-            TMP_Text label = CreateMenuLabel("Label", button.transform, "LOGS", LOGS_BUTTON_FONT_SIZE);
-            UiFactory.Stretch(label.rectTransform);
-            label.rectTransform.sizeDelta = -LOGS_BUTTON_LABEL_PADDING;
-            return button;
+            return CreateCornerTextButton("LogsButton", area, "LOGS", LOGS_SLOT);
         }
 
         static LogsMenuController CreateLogsScreen(Transform menu, out Button backButton)
@@ -504,12 +653,24 @@ namespace GunJump.EditorTools
 
         static void CreateToggle(string name, Transform parent, AudioChannel channel, Sprite iconSprite, int slot)
         {
+            Button button = CreateToggleButton(name, parent, iconSprite, slot, out Image icon, out GameObject offMark);
+
+            AudioToggleButton toggle = button.gameObject.AddComponent<AudioToggleButton>();
+            SerializedObject serialized = new SerializedObject(toggle);
+            serialized.FindProperty("channel").intValue = (int)channel;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            GameSceneBuilder.SetReference(toggle, "icon", icon);
+            GameSceneBuilder.SetReference(toggle, "offMark", offMark);
+        }
+
+        static Button CreateToggleButton(string name, Transform parent, Sprite iconSprite, int slot, out Image icon, out GameObject offMark)
+        {
             float x = -(CORNER_MARGIN + slot * (CORNER_BUTTON_SIZE + CORNER_BUTTON_GAP));
             Button button = CreateArtButton(name, parent, Load<Sprite>(ROUND_BUTTON_PATH), Color.white);
             UiFactory.Place((RectTransform)button.transform, UiFactory.TOP_RIGHT, new Vector2(x, -CORNER_MARGIN),
                 new Vector2(CORNER_BUTTON_SIZE, CORNER_BUTTON_SIZE));
 
-            Image icon = UiFactory.CreateImage("Icon", button.transform, Color.white, false);
+            icon = UiFactory.CreateImage("Icon", button.transform, Color.white, false);
             icon.sprite = iconSprite;
             icon.preserveAspect = true;
             UiFactory.Place(icon.rectTransform, UiFactory.CENTER, Vector2.zero, new Vector2(TOGGLE_ICON_SIZE, TOGGLE_ICON_SIZE));
@@ -518,13 +679,8 @@ namespace GunJump.EditorTools
             UiFactory.Place(slash.rectTransform, UiFactory.CENTER, Vector2.zero, SLASH_SIZE);
             slash.rectTransform.localRotation = Quaternion.Euler(0f, 0f, 45f);
             slash.gameObject.SetActive(false);
-
-            AudioToggleButton toggle = button.gameObject.AddComponent<AudioToggleButton>();
-            SerializedObject serialized = new SerializedObject(toggle);
-            serialized.FindProperty("channel").intValue = (int)channel;
-            serialized.ApplyModifiedPropertiesWithoutUndo();
-            GameSceneBuilder.SetReference(toggle, "icon", icon);
-            GameSceneBuilder.SetReference(toggle, "offMark", slash.gameObject);
+            offMark = slash.gameObject;
+            return button;
         }
 
         static GameObject EnsureLevelMenuPrefab(GameObject audioToggles)
@@ -670,6 +826,32 @@ namespace GunJump.EditorTools
             }
 
             return Load<Sprite>(path);
+        }
+
+        static bool IsInsidePhone(float x, float y)
+        {
+            const float CENTER = 0.5f;
+            const float BODY_HALF_WIDTH = 0.16f;
+            const float BODY_HALF_HEIGHT = 0.32f;
+            const float FRAME = 0.05f;
+            const float MARK_HALF_WIDTH = 0.025f;
+            const float INNER_MARK_X = 0.24f;
+            const float OUTER_MARK_X = 0.33f;
+            const float INNER_MARK_HALF_HEIGHT = 0.16f;
+            const float OUTER_MARK_HALF_HEIGHT = 0.1f;
+
+            float dx = Mathf.Abs(x - CENTER);
+            float dy = Mathf.Abs(y - CENTER);
+
+            bool isInsideBody = dx <= BODY_HALF_WIDTH && dy <= BODY_HALF_HEIGHT;
+            bool isInsideScreen = dx <= BODY_HALF_WIDTH - FRAME && dy <= BODY_HALF_HEIGHT - FRAME;
+            if (isInsideBody && !isInsideScreen)
+                return true;
+
+            if (Mathf.Abs(dx - INNER_MARK_X) <= MARK_HALF_WIDTH && dy <= INNER_MARK_HALF_HEIGHT)
+                return true;
+
+            return Mathf.Abs(dx - OUTER_MARK_X) <= MARK_HALF_WIDTH && dy <= OUTER_MARK_HALF_HEIGHT;
         }
 
         static bool IsInsideSpeaker(float x, float y)

@@ -24,6 +24,13 @@
 
 public static class GPGSIds
 {
+        public const string achievement_top_multiplier = "CgkIrOrsv9EEEAIQBA"; // <GPGSID>
+        public const string achievement_arsenal = "CgkIrOrsv9EEEAIQBQ"; // <GPGSID>
         public const string achievement_primer_inicio = "CgkIrOrsv9EEEAIQAQ"; // <GPGSID>
+        public const string leaderboard_total_score = "CgkIrOrsv9EEEAIQBw"; // <GPGSID>
+        public const string achievement_all_stars = "CgkIrOrsv9EEEAIQBg"; // <GPGSID>
+        public const string achievement_clean_sweep = "CgkIrOrsv9EEEAIQAw"; // <GPGSID>
+        public const string achievement_first_clear = "CgkIrOrsv9EEEAIQAg"; // <GPGSID>
+
 }
 

@@ -1,4 +1,6 @@
 using GunJump.Core;
+using GunJump.Platform;
+using ianco99.ToolBox.Services;
 using UnityEngine;
 
 namespace GunJump.Gameplay
@@ -14,6 +16,8 @@ namespace GunJump.Gameplay
         public bool IsDead => isDead;
 
         protected EnemyConfig Config => config;
+
+        MobilePlatform MobilePlatform => ServiceProvider.Instance.GetService<MobilePlatform>();
 
         protected virtual void Awake()
         {
@@ -43,6 +47,7 @@ namespace GunJump.Gameplay
 
             isDead = true;
             GameAudio.Play(SoundId.EnemyDeath);
+            MobilePlatform.Vibrate(HapticPulse.Kill);
             session?.RegisterKill(config.CoinReward);
             OnDeath(hit);
         }
