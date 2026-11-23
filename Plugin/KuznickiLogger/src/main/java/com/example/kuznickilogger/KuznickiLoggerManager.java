@@ -1,33 +1,35 @@
 package com.example.kuznickilogger;
 
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.util.Log;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
-import java.util.ArrayDeque;
 import java.util.Date;
-import java.util.Iterator;
 import java.util.Locale;
 
 public class KuznickiLoggerManager {
     private static final String TAG = "KuznickiLog";
     private static final String LOGS_FOLDER = "logs";
     private static final String SESSION_FILE_NAME = "session.log";
-    private static final String STACK_TRACE_INDENT = "    ";
+    private static final String CONTINUATION_INDENT = "    ";
+    private static final String LINE_BREAK = "\n";
     private static final char ENTRY_SEPARATOR = '\u001E';
-    private static final int MAX_BUFFERED_LINES = 1000;
     private static final long MAX_SESSION_BYTES = 4L * 1024L * 1024L;
 
     private static final KuznickiLoggerManager instance = new KuznickiLoggerManager();
     public static KuznickiLoggerManager getInstance() {return instance;}
 
-    private final ArrayDeque<LogLine> bufferedLines = new ArrayDeque<>();
     private final SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss.SSS", Locale.US);
     private Context context;
     private File sessionFile;
@@ -60,75 +62,66 @@ public class KuznickiLoggerManager {
         openSession();
     }
 
-    public synchronized void log(int priority, long timeMillis, String message, String stackTrace)
+    public synchronized void sendLog(int priority, long timeMillis, String message, String stackTrace)
     {
         Log.println(priority, TAG, message);
-
-        String text = formatLine(priority, timeMillis, message, stackTrace);
-        bufferedLines.addLast(new LogLine(priority, text));
-        while (bufferedLines.size() > MAX_BUFFERED_LINES)
-            bufferedLines.removeFirst();
-
-        appendToSession(text);
+        appendToSession(formatLine(priority, timeMillis, message, stackTrace));
     }
 
-    public synchronized String getLogs(int minPriority, int maxEntries)
+    public synchronized String getLogs()
     {
-        int matches = 0;
-        LogLine firstMatch = null;
-        Iterator<LogLine> newestFirst = bufferedLines.descendingIterator();
+        if (sessionFile == null || !sessionFile.exists())
+            return "";
 
-        while (newestFirst.hasNext() && matches < maxEntries)
+        flushSession();
+        StringBuilder builder = new StringBuilder();
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new FileInputStream(sessionFile), StandardCharsets.UTF_8)))
         {
-            LogLine logLine = newestFirst.next();
-            if (logLine.priority >= minPriority)
+            String line;
+            while ((line = reader.readLine()) != null)
             {
-                matches++;
-                firstMatch = logLine;
+                if (builder.length() > 0)
+                    builder.append(line.startsWith(CONTINUATION_INDENT) ? LINE_BREAK : String.valueOf(ENTRY_SEPARATOR));
+
+                builder.append(line);
             }
         }
-
-        StringBuilder builder = new StringBuilder();
-        boolean isCollecting = false;
-
-        for (LogLine logLine : bufferedLines)
+        catch (IOException exception)
         {
-            if (logLine == firstMatch)
-                isCollecting = true;
-
-            if (!isCollecting || logLine.priority < minPriority)
-                continue;
-
-            if (builder.length() > 0)
-                builder.append(ENTRY_SEPARATOR);
-
-            builder.append(logLine.text);
+            Log.e(TAG, "Could not read the session log " + sessionFile.getAbsolutePath(), exception);
         }
 
         return builder.toString();
     }
 
-    public synchronized int getLogCount()
+    public void clearLogs(Activity activity, ClearLogsListener listener)
     {
-        return bufferedLines.size();
+        activity.runOnUiThread(() -> showClearConfirmation(activity, listener));
     }
 
-    public synchronized void clear()
+    private void showClearConfirmation(Activity activity, ClearLogsListener listener)
     {
-        bufferedLines.clear();
+        if (activity.isFinishing())
+            return;
+
+        new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle(R.string.kuznicki_logger_clear_title)
+                .setMessage(R.string.kuznicki_logger_clear_message)
+                .setPositiveButton(R.string.kuznicki_logger_clear_confirm, (dialog, which) -> onClearConfirmed(listener))
+                .setNegativeButton(R.string.kuznicki_logger_clear_cancel, null)
+                .show();
+    }
+
+    private void onClearConfirmed(ClearLogsListener listener)
+    {
+        clearSession();
+        listener.onLogsCleared();
+    }
+
+    private synchronized void clearSession()
+    {
         openSession();
-    }
-
-    public synchronized String exportLogs()
-    {
-        if (context == null)
-        {
-            Log.e(TAG, "exportLogs was called before init");
-            return "";
-        }
-
-        flushSession();
-        return new LogExporter(context).export(sessionFile);
     }
 
     private String formatLine(int priority, long timeMillis, String message, String stackTrace)
@@ -138,19 +131,26 @@ public class KuznickiLoggerManager {
         builder.append(' ');
         builder.append(priorityLetter(priority));
         builder.append(' ');
-        builder.append(message);
+
+        String[] messageLines = message.split(LINE_BREAK, -1);
+        builder.append(messageLines[0]);
+        for (int i = 1; i < messageLines.length; i++)
+            appendContinuation(builder, messageLines[i]);
 
         if (stackTrace == null || stackTrace.trim().isEmpty())
             return builder.toString();
 
-        for (String stackLine : stackTrace.trim().split("\n"))
-        {
-            builder.append('\n');
-            builder.append(STACK_TRACE_INDENT);
-            builder.append(stackLine);
-        }
+        for (String stackLine : stackTrace.trim().split(LINE_BREAK))
+            appendContinuation(builder, stackLine);
 
         return builder.toString();
+    }
+
+    private void appendContinuation(StringBuilder builder, String line)
+    {
+        builder.append('\n');
+        builder.append(CONTINUATION_INDENT);
+        builder.append(line);
     }
 
     private char priorityLetter(int priority)
@@ -240,17 +240,5 @@ public class KuznickiLoggerManager {
         }
 
         sessionWriter = null;
-    }
-
-    private static final class LogLine
-    {
-        final int priority;
-        final String text;
-
-        LogLine(int priority, String text)
-        {
-            this.priority = priority;
-            this.text = text;
-        }
     }
 }

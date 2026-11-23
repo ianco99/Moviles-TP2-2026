@@ -2,7 +2,8 @@
     "name": "GunJump.Platform",
     "rootNamespace": "GunJump.Platform",
     "references": [
-        "GunJump.Core"
+        "GunJump.Core",
+        "Google.Play.Games"
     ],
     "autoReferenced": true
 }

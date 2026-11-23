@@ -26,6 +26,9 @@ namespace GunJump.Gameplay
         int kills;
         public int Kills => kills;
 
+        int shotsFired;
+        public int ShotsFired => shotsFired;
+
         readonly int totalEnemies;
         public int TotalEnemies => totalEnemies;
 
@@ -53,6 +56,12 @@ namespace GunJump.Gameplay
         {
             if (IsPlaying)
                 elapsed += deltaTime;
+        }
+
+        public void RegisterShot()
+        {
+            shotsFired++;
+            ConsumeAmmo();
         }
 
         public void ConsumeAmmo()

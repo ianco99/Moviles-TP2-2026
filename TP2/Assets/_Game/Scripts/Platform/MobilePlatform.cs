@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using ianco99.ToolBox.Services;
 using UnityEngine;
 
@@ -8,8 +7,6 @@ namespace GunJump.Platform
 {
     public sealed class MobilePlatform : IService, IDisposable
     {
-        private const string MANAGED_LOGS_FOLDER = "Logs";
-
         public bool IsPersistance => true;
 
         private readonly INativeLogger nativeLogger;
@@ -24,23 +21,19 @@ namespace GunJump.Platform
                 Debug.LogError(pluginError);
         }
 
-        public void ReadLogs(LogSeverity minimumSeverity, int maxLines, List<LogLine> lines)
+        public void ReadLogs(List<LogLine> lines)
         {
             logCapture.Flush();
-            nativeLogger.Read(minimumSeverity, maxLines, lines);
+            nativeLogger.Read(lines);
         }
 
-        public void ClearLogs()
+        public void RequestClearLogs()
         {
             logCapture.Flush();
-            nativeLogger.Clear();
+            nativeLogger.RequestClear();
         }
 
-        public bool TryExportLogs(out string location)
-        {
-            logCapture.Flush();
-            return nativeLogger.TryExport(out location);
-        }
+        public bool WereLogsClearedSinceLastCheck() => nativeLogger.WereLogsClearedSinceLastCheck();
 
         public void Dispose()
         {
@@ -51,10 +44,9 @@ namespace GunJump.Platform
         private static INativeLogger CreateNativeLogger(out string pluginError)
         {
             pluginError = string.Empty;
-            string managedFolder = Path.Combine(Application.persistentDataPath, MANAGED_LOGS_FOLDER);
 
             if (Application.platform != RuntimePlatform.Android)
-                return new ManagedLogger(managedFolder);
+                return new ManagedLogger();
 
             try
             {
@@ -63,7 +55,7 @@ namespace GunJump.Platform
             catch (AndroidJavaException exception)
             {
                 pluginError = $"MobilePlatform could not start the KuznickiLogger plugin, logs stay in memory: {exception.Message}";
-                return new ManagedLogger(managedFolder);
+                return new ManagedLogger();
             }
         }
     }

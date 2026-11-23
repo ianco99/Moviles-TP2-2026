@@ -31,12 +31,16 @@ namespace GunJump.Gameplay
         int nextLevelBuildIndex;
         float outOfAmmoTime;
         bool finished;
+        bool isPaused;
+        bool isSlowStart;
+        bool isStartHintShown;
 
         LevelLoader LevelLoader => ServiceProvider.Instance.GetService<LevelLoader>();
         PlayerWalletManager Wallet => ServiceProvider.Instance.GetService<PlayerWalletManager>();
         PlayerLevelProgress LevelProgress => ServiceProvider.Instance.GetService<PlayerLevelProgress>();
 
         bool HasNextLevel => nextLevelBuildIndex != NO_NEXT_LEVEL;
+        float PlayingTimeScale => isSlowStart ? settings.StartTimeScale : 1f;
 
         void Start()
         {
@@ -66,11 +70,29 @@ namespace GunJump.Gameplay
             foreach (FinishZone finish in FindObjectsByType<FinishZone>(FindObjectsSortMode.None))
                 finish.Bind(session);
 
+            foreach (HazardZone hazard in FindObjectsByType<HazardZone>(FindObjectsSortMode.None))
+                hazard.Bind(session);
+
+            foreach (TutorialZone zone in FindObjectsByType<TutorialZone>(FindObjectsSortMode.None))
+                zone.Bind(hud);
+
             BindCommands();
 
             pauseView.Show(false);
             resultView.Hide();
+            StartTutorial();
             RefreshHud();
+        }
+
+        void StartTutorial()
+        {
+            isSlowStart = settings.StartTimeScale < 1f;
+            isStartHintShown = !string.IsNullOrEmpty(settings.StartHint);
+
+            if (isStartHintShown)
+                hud.ShowHint(settings.StartHint, true);
+            else
+                hud.HideHint();
         }
 
         void BindCommands()
@@ -97,6 +119,9 @@ namespace GunJump.Gameplay
             if (session == null || finished)
                 return;
 
+            if (isSlowStart)
+                UpdateSlowStart();
+
             session.Tick(Time.deltaTime);
 
             if (gunTransform.position.y < settings.FallLimitY || RanOutOfAmmo())
@@ -113,8 +138,31 @@ namespace GunJump.Gameplay
             if (finished)
                 return;
 
-            Time.timeScale = paused ? 0f : 1f;
+            isPaused = paused;
+            Time.timeScale = paused ? 0f : PlayingTimeScale;
             pauseView.Show(paused);
+        }
+
+        void UpdateSlowStart()
+        {
+            if (session.ShotsFired == 0)
+            {
+                if (!isPaused && !LevelLoader.IsLoading)
+                    Time.timeScale = settings.StartTimeScale;
+
+                return;
+            }
+
+            isSlowStart = false;
+
+            if (!isPaused)
+                Time.timeScale = 1f;
+
+            if (isStartHintShown)
+            {
+                isStartHintShown = false;
+                hud.HideHint();
+            }
         }
 
         static bool HasServices()
@@ -153,6 +201,13 @@ namespace GunJump.Gameplay
         void Finish()
         {
             finished = true;
+
+            if (isSlowStart)
+            {
+                isSlowStart = false;
+                Time.timeScale = 1f;
+            }
+
             bool won = session.State == LevelState.Won;
             GameAudio.Play(won ? SoundId.LevelWin : SoundId.LevelLose);
             int stars = 0;

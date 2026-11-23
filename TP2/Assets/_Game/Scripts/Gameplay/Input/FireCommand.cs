@@ -16,7 +16,7 @@ namespace GunJump.Gameplay
         public void Execute()
         {
             if (session.CanFire && gun.TryFire())
-                session.ConsumeAmmo();
+                session.RegisterShot();
             else if (session.IsPlaying && session.IsOutOfAmmo)
                 GameAudio.Play(SoundId.DryFire);
         }

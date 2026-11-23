@@ -87,5 +87,28 @@ namespace GunJump.Tests
 
             Assert.AreEqual(LevelState.Lost, session.State);
         }
+
+        [Test]
+        public void RegisterShot_CountsShotsWithInfiniteAmmo()
+        {
+            LevelSession session = new LevelSession(0, 0);
+
+            session.RegisterShot();
+            session.RegisterShot();
+
+            Assert.AreEqual(2, session.ShotsFired);
+            Assert.IsTrue(session.CanFire);
+        }
+
+        [Test]
+        public void RegisterShot_ConsumesFiniteAmmo()
+        {
+            LevelSession session = new LevelSession(3, 0);
+
+            session.RegisterShot();
+
+            Assert.AreEqual(1, session.ShotsFired);
+            Assert.AreEqual(2, session.Ammo);
+        }
     }
 }

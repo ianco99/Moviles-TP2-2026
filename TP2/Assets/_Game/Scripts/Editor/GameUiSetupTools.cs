@@ -69,7 +69,6 @@ namespace GunJump.EditorTools
         const float LOGS_STATUS_FONT_SIZE = 34f;
         const float LOGS_STATUS_Y = 250f;
         const float LOGS_ROW_Y = 70f;
-        const float LOGS_ROW_SPACING = 340f;
         const float LOGS_SCROLL_SENSITIVITY = 30f;
 
         const string BUTTON_PREFAB_PATH = ROOT + "/Prefabs/Menu/Button.prefab";
@@ -90,7 +89,6 @@ namespace GunJump.EditorTools
         static readonly Vector2 LOGS_ROW_BUTTON_SIZE = new Vector2(310f, 160f);
         static readonly Color LOGS_BACKGROUND_COLOR = new Color(0.12f, 0.12f, 0.14f, 1f);
         static readonly Color LOGS_PANEL_COLOR = new Color(0.06f, 0.06f, 0.07f, 1f);
-        static readonly Color LOGS_FILTER_COLOR = new Color(0.35f, 0.7f, 1f);
         static readonly Vector2 LEVEL_STARS_SIZE = new Vector2(130f, 40f);
 
         [MenuItem("GunJump/UI/Setup Menu Buttons")]
@@ -323,16 +321,11 @@ namespace GunJump.EditorTools
             status.textWrappingMode = TextWrappingModes.Normal;
             UiFactory.Place(status.rectTransform, BOTTOM_CENTER, new Vector2(0f, LOGS_STATUS_Y), LOGS_STATUS_SIZE);
 
-            Button filterButton = CreateRowButton("FilterButton", safeArea, "TODOS", LOGS_FILTER_COLOR, -LOGS_ROW_SPACING, out TMP_Text filterLabel);
-            Button exportButton = CreateRowButton("ExportButton", safeArea, "EXPORTAR", CONFIRM_COLOR, 0f, out _);
-            Button clearButton = CreateRowButton("ClearButton", safeArea, "BORRAR", CANCEL_COLOR, LOGS_ROW_SPACING, out _);
+            Button clearButton = CreateRowButton("ClearButton", safeArea, "BORRAR", CANCEL_COLOR, 0f, out _);
 
             LogsMenuController controller = screen.gameObject.AddComponent<LogsMenuController>();
             GameSceneBuilder.SetReference(controller, "logText", logText);
             GameSceneBuilder.SetReference(controller, "scrollRect", scrollRect);
-            GameSceneBuilder.SetReference(controller, "filterButton", filterButton);
-            GameSceneBuilder.SetReference(controller, "filterLabel", filterLabel);
-            GameSceneBuilder.SetReference(controller, "exportButton", exportButton);
             GameSceneBuilder.SetReference(controller, "clearButton", clearButton);
             GameSceneBuilder.SetReference(controller, "statusText", status);
 

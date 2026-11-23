@@ -17,22 +17,15 @@ namespace GunJump.UI
         private const string NO_PARSE_CLOSE = "</noparse>";
         private const string ESCAPED_NO_PARSE_CLOSE = "</ noparse>";
         private const string EMPTY_TEXT = "No hay logs para mostrar.";
-        private const string EXPORTED_TEXT = "Guardado en ";
-        private const string EXPORT_FAILED_TEXT = "No se pudo exportar el archivo.";
         private const string CLEARED_TEXT = "Logs borrados.";
-
-        private static readonly string[] SEVERITY_LABELS = { "TODOS", "ADVERTENCIAS", "ERRORES" };
 
         [SerializeField] private TMP_Text logText;
         [SerializeField] private ScrollRect scrollRect;
-        [SerializeField] private Button filterButton;
-        [SerializeField] private TMP_Text filterLabel;
-        [SerializeField] private Button exportButton;
         [SerializeField] private Button clearButton;
         [SerializeField] private TMP_Text statusText;
 
         [Header("Display")]
-        [Tooltip("Entradas que se muestran como máximo. El archivo exportado tiene todas las de la sesión.")]
+        [Tooltip("Entradas más nuevas que se muestran como máximo. El plugin devuelve todas las de la sesión.")]
         [SerializeField] private int maxVisibleLines = 200;
         [Tooltip("Tope de caracteres en pantalla, para que TextMeshPro no arme una malla enorme. Se muestran las entradas más nuevas.")]
         [SerializeField] private int maxVisibleCharacters = 15000;
@@ -42,7 +35,6 @@ namespace GunJump.UI
 
         private readonly List<LogLine> lines = new List<LogLine>();
         private readonly StringBuilder textBuilder = new StringBuilder();
-        private LogSeverity minimumSeverity = LogSeverity.Info;
         private string infoHex;
         private string warningHex;
         private string errorHex;
@@ -55,9 +47,13 @@ namespace GunJump.UI
             warningHex = ColorUtility.ToHtmlStringRGB(warningColor);
             errorHex = ColorUtility.ToHtmlStringRGB(errorColor);
 
-            filterButton.onClick.AddListener(FilterClicked);
-            exportButton.onClick.AddListener(ExportClicked);
             clearButton.onClick.AddListener(ClearClicked);
+        }
+
+        private void Update()
+        {
+            if (MobilePlatform.WereLogsClearedSinceLastCheck())
+                OnLogsCleared();
         }
 
         public void WakeUp()
@@ -66,41 +62,22 @@ namespace GunJump.UI
             Refresh();
         }
 
-        private void FilterClicked()
+        private void OnLogsCleared()
         {
-            GameAudio.Play(SoundId.ButtonClick);
-            minimumSeverity = minimumSeverity == LogSeverity.Error ? LogSeverity.Info : minimumSeverity + 1;
-            Refresh();
-        }
-
-        private void ExportClicked()
-        {
-            GameAudio.Play(SoundId.ButtonClick);
-
-            if (MobilePlatform.TryExportLogs(out string location))
-            {
-                statusText.text = EXPORTED_TEXT + location;
-            }
-            else
-            {
-                statusText.text = EXPORT_FAILED_TEXT;
-            }
-
+            statusText.text = CLEARED_TEXT;
             Refresh();
         }
 
         private void ClearClicked()
         {
             GameAudio.Play(SoundId.ButtonClick);
-            MobilePlatform.ClearLogs();
-            statusText.text = CLEARED_TEXT;
-            Refresh();
+            statusText.text = string.Empty;
+            MobilePlatform.RequestClearLogs();
         }
 
         private void Refresh()
         {
-            filterLabel.text = SEVERITY_LABELS[(int)minimumSeverity];
-            MobilePlatform.ReadLogs(minimumSeverity, maxVisibleLines, lines);
+            MobilePlatform.ReadLogs(lines);
 
             if (lines.Count == 0)
             {
@@ -124,10 +101,11 @@ namespace GunJump.UI
 
         private int FirstVisibleLine()
         {
+            int oldestAllowedLine = Mathf.Max(0, lines.Count - maxVisibleLines);
             int firstVisible = lines.Count - 1;
             int characters = lines[firstVisible].text.Length;
 
-            while (firstVisible > 0 && characters + lines[firstVisible - 1].text.Length <= maxVisibleCharacters)
+            while (firstVisible > oldestAllowedLine && characters + lines[firstVisible - 1].text.Length <= maxVisibleCharacters)
             {
                 firstVisible--;
                 characters += lines[firstVisible].text.Length;

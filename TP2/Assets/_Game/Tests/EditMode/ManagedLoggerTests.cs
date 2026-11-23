@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using GunJump.Platform;
 using NUnit.Framework;
 using UnityEngine;
@@ -10,15 +9,13 @@ namespace GunJump.Tests
     {
         const long TIME = 1763650000000L;
 
-        string folder;
         ManagedLogger logger;
         List<LogLine> lines;
 
         [SetUp]
         public void SetUp()
         {
-            folder = Path.Combine(Application.temporaryCachePath, "gunjump-logs-" + System.Guid.NewGuid().ToString("N"));
-            logger = new ManagedLogger(folder);
+            logger = new ManagedLogger();
             lines = new List<LogLine>();
         }
 
@@ -26,9 +23,6 @@ namespace GunJump.Tests
         public void TearDown()
         {
             logger.Dispose();
-
-            if (Directory.Exists(folder))
-                Directory.Delete(folder, true);
         }
 
         [Test]
@@ -37,7 +31,7 @@ namespace GunJump.Tests
             logger.Write(LogType.Log, TIME, "first", string.Empty);
             logger.Write(LogType.Log, TIME, "second", string.Empty);
 
-            logger.Read(LogSeverity.Info, 10, lines);
+            logger.Read(lines);
 
             Assert.AreEqual(2, lines.Count);
             StringAssert.EndsWith("first", lines[0].text);
@@ -45,35 +39,19 @@ namespace GunJump.Tests
         }
 
         [Test]
-        public void Read_FiltersByMinimumSeverity()
+        public void Read_ReturnsEverySeverity()
         {
             logger.Write(LogType.Log, TIME, "info", string.Empty);
             logger.Write(LogType.Warning, TIME, "warning", string.Empty);
             logger.Write(LogType.Exception, TIME, "exception", "at Gun.Fire()");
 
-            logger.Read(LogSeverity.Warning, 10, lines);
-            Assert.AreEqual(2, lines.Count);
-            Assert.AreEqual(LogSeverity.Warning, lines[0].severity);
-            Assert.AreEqual(LogSeverity.Error, lines[1].severity);
+            logger.Read(lines);
 
-            logger.Read(LogSeverity.Error, 10, lines);
-            Assert.AreEqual(1, lines.Count);
-            StringAssert.Contains("at Gun.Fire()", lines[0].text);
-        }
-
-        [Test]
-        public void Read_KeepsOnlyTheNewestLines()
-        {
-            for (int i = 0; i < 5; i++)
-            {
-                logger.Write(LogType.Log, TIME, "line " + i, string.Empty);
-            }
-
-            logger.Read(LogSeverity.Info, 2, lines);
-
-            Assert.AreEqual(2, lines.Count);
-            StringAssert.EndsWith("line 3", lines[0].text);
-            StringAssert.EndsWith("line 4", lines[1].text);
+            Assert.AreEqual(3, lines.Count);
+            Assert.AreEqual(LogSeverity.Info, lines[0].severity);
+            Assert.AreEqual(LogSeverity.Warning, lines[1].severity);
+            Assert.AreEqual(LogSeverity.Error, lines[2].severity);
+            StringAssert.Contains("at Gun.Fire()", lines[2].text);
         }
 
         [Test]
@@ -84,36 +62,23 @@ namespace GunJump.Tests
                 logger.Write(LogType.Log, TIME, "line " + i, string.Empty);
             }
 
-            logger.Read(LogSeverity.Info, 2000, lines);
+            logger.Read(lines);
 
             Assert.AreEqual(1000, lines.Count);
             StringAssert.EndsWith("line 5", lines[0].text);
         }
 
         [Test]
-        public void Clear_RemovesEveryLine()
+        public void RequestClear_RemovesEveryLineAndReportsItOnce()
         {
             logger.Write(LogType.Error, TIME, "error", string.Empty);
 
-            logger.Clear();
-            logger.Read(LogSeverity.Info, 10, lines);
+            logger.RequestClear();
+            logger.Read(lines);
 
             Assert.AreEqual(0, lines.Count);
-        }
-
-        [Test]
-        public void TryExport_WritesEveryLineToAFile()
-        {
-            logger.Write(LogType.Log, TIME, "exported info", string.Empty);
-            logger.Write(LogType.Error, TIME, "exported error", "at Level.Finish()");
-
-            Assert.IsTrue(logger.TryExport(out string location));
-            Assert.IsTrue(File.Exists(location));
-
-            string report = File.ReadAllText(location);
-            StringAssert.Contains("exported info", report);
-            StringAssert.Contains("exported error", report);
-            StringAssert.Contains("at Level.Finish()", report);
+            Assert.IsTrue(logger.WereLogsClearedSinceLastCheck());
+            Assert.IsFalse(logger.WereLogsClearedSinceLastCheck());
         }
     }
 }

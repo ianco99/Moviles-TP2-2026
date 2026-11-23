@@ -11,6 +11,11 @@ namespace GunJump.UI
         [SerializeField] TMP_Text coinsLabel;
         [SerializeField] TMP_Text enemiesLabel;
         [SerializeField] CommandButton pauseButton;
+        [Tooltip("Cartel del tutorial. Lo muestran LevelSettings al empezar y los TutorialZone del nivel.")]
+        [SerializeField] GameObject hintPanel;
+        [SerializeField] TMP_Text hintLabel;
+        [Tooltip("Círculo que late para indicar que hay que tocar la pantalla.")]
+        [SerializeField] GameObject tapIndicator;
 
         int shownAmmo = UNSET;
         int shownCoins = UNSET;
@@ -37,6 +42,19 @@ namespace GunJump.UI
 
             shownCoins = coins;
             coinsLabel.SetText("Monedas {0}", coins);
+        }
+
+        public void ShowHint(string text, bool showTap)
+        {
+            hintLabel.text = text;
+            tapIndicator.SetActive(showTap);
+            hintPanel.SetActive(true);
+        }
+
+        public void HideHint()
+        {
+            hintPanel.SetActive(false);
+            tapIndicator.SetActive(false);
         }
 
         public void SetEnemiesRemaining(int remaining)
