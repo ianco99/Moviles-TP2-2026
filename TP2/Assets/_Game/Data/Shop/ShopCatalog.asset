@@ -33,5 +33,16 @@ MonoBehaviour:
   - {fileID: 11400000, guid: a5be1ceaf5cb2d3d580cfb3d2a629ae0, type: 2}
   - {fileID: 11400000, guid: 82ede74f74fc2bd1081248aeddd25597, type: 2}
   bullets: []
-  shotVfx: []
+  shotVfx:
+  - {fileID: 11400000, guid: e711424c2714727488b4a4ca957d6166, type: 2}
+  - {fileID: 11400000, guid: 383fe69d8c3f00d4996e9f18172adb16, type: 2}
+  - {fileID: 11400000, guid: b08035215d881204984f1fc8119ab987, type: 2}
+  - {fileID: 11400000, guid: a79571eca2eaa124db564b9addf4be2e, type: 2}
+  - {fileID: 11400000, guid: aee71c16d6b37bf4a948e377c5cc43fb, type: 2}
+  - {fileID: 11400000, guid: a024ab61fa55e6d438076621d15a8d22, type: 2}
+  - {fileID: 11400000, guid: f312c420f9cadeb42bd9714e23884ae8, type: 2}
+  - {fileID: 11400000, guid: a5b2b734e836f0240ba3d0b8fc62803e, type: 2}
+  - {fileID: 11400000, guid: f3d368372858cf844802da82dabe45a5, type: 2}
+  - {fileID: 11400000, guid: 9a66709419d9df343b8ed952c1601eb6, type: 2}
   defaultGun: {fileID: 11400000, guid: 6cce1a77ff07c89ad8ad670869dca600, type: 2}
+  defaultSkin: {fileID: 0}

@@ -10,7 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3009408c85248b8ae8506e73468e831c, type: 3}
-  m_Name: Particles_Explosion
-  m_EditorClassIdentifier: GunJump.UI::_Game.Scripts.Shop.ShopItem
-  sprite: {fileID: 21300000, guid: 4cf7c94f9c0c5631d8c8a56e1e9200b8, type: 3}
-  category: 0
+  m_Name: Particles_Hit_08
+  m_EditorClassIdentifier: GunJump.Economy::_Game.Scripts.Shop.ShopItem
+  sprite: {fileID: 21300000, guid: 16b66fbd4706a8a41b8a8597aee72a35, type: 3}
+  category: 3
+  price: 100
+  assetName: HCFX_Hit_08
