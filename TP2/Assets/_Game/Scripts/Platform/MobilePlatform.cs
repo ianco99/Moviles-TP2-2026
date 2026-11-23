@@ -11,8 +11,7 @@ namespace GunJump.Platform
 
         public bool IsPersistance => true;
 
-        private readonly INativeLogger nativeLogger;
-        private readonly LogCapture logCapture;
+        private readonly AndroidNativeLogger nativeLogger;
         private readonly Dictionary<Achievement, string> achievementIDs = new Dictionary<Achievement, string>();
         private IHaptics haptics;
         private HapticsTuning hapticsTuning;
@@ -23,12 +22,8 @@ namespace GunJump.Platform
 
         public MobilePlatform()
         {
-            nativeLogger = CreateNativeLogger(out string pluginError);
-            logCapture = new LogCapture(nativeLogger);
+            nativeLogger = new AndroidNativeLogger();
             haptics = new SilentHaptics();
-
-            if (!string.IsNullOrEmpty(pluginError))
-                Debug.LogError(pluginError);
         }
 
         public void Init(HapticsTuning tuning)
@@ -61,19 +56,12 @@ namespace GunJump.Platform
             UnlockAchievement(Achievement.FirstLaunch);
         }
 
-        public void ReadLogs(List<LogLine> lines)
-        {
-            logCapture.Flush();
-            nativeLogger.Read(lines);
-        }
+        public string GetLogs() => nativeLogger.GetLogs();
 
-        public void RequestClearLogs()
+        public void ClearLogs()
         {
-            logCapture.Flush();
-            nativeLogger.RequestClear();
+            nativeLogger.ClearLogs();
         }
-
-        public bool WereLogsClearedSinceLastCheck() => nativeLogger.WereLogsClearedSinceLastCheck();
 
         public void Vibrate(HapticPulse pulse)
         {
@@ -121,26 +109,7 @@ namespace GunJump.Platform
                 playGames.SignedIn -= OnSignedIn;
 
             haptics.Dispose();
-            logCapture.Dispose();
             nativeLogger.Dispose();
-        }
-
-        private static INativeLogger CreateNativeLogger(out string pluginError)
-        {
-            pluginError = string.Empty;
-
-            if (Application.platform != RuntimePlatform.Android)
-                return new ManagedLogger();
-
-            try
-            {
-                return new AndroidNativeLogger();
-            }
-            catch (AndroidJavaException exception)
-            {
-                pluginError = $"MobilePlatform could not start the KuznickiLogger plugin, logs stay in memory: {exception.Message}";
-                return new ManagedLogger();
-            }
         }
 
         private static IHaptics CreateHaptics(out string pluginError)

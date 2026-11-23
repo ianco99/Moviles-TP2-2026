@@ -16,6 +16,3 @@
 -keep class com.example.kuznickilogger.KuznickiVibrator {
     public *;
 }
--keep interface com.example.kuznickilogger.ClearLogsListener {
-    *;
-}

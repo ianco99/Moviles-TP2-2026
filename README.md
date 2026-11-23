@@ -42,8 +42,8 @@ La consigna pide al menos tres, distintos a los del TP1. Están implementados **
 | **Strategy** | `Gameplay/Weapons/IFireStrategy.cs`, `FireStrategy.cs`, `SingleShot.cs`, `SpreadShot.cs`, `BurstShot.cs`, `WeaponCatalog.cs`; `Gameplay/Gun/Gun.cs` (`SetStrategy`, `TryFire`) | Cada arma de la tienda dispara distinto (tiro simple, abanico, ráfaga). `Gun` no sabe cuál tiene: al cargar el nivel, `WeaponCatalog` le asigna la estrategia del arma equipada. Cada estrategia es un ScriptableObject con su ajuste. |
 | **Command** | `Core/Commands/ICommand.cs`, `CommandInvoker.cs`; `Gameplay/Input/FireCommand.cs`, `InputReader.cs`; `Gameplay/Level/SetPausedCommand.cs`, `LevelBackCommand.cs`; `Core/Scenes/LoadSceneCommand.cs`, `RestartSceneCommand.cs`, `LoadMenuCommand.cs`; `UI/CommandButton.cs` | El toque, el botón Atrás y los botones del nivel (pausa, reintentar, siguiente, menú, tienda) no ejecutan acciones directamente: entregan un comando a `CommandInvoker`, que además puede grabarlos con su tiempo. |
 | **Memento** | Fotos: `Economy/Save/EconomySnapshots.cs` (`WalletSnapshot`, `InventorySnapshot`, `LevelProgressSnapshot`). Originadores: `Economy/PlayerWalletManager.cs`, `PlayerInventoryManager.cs`, `PlayerLevelProgress.cs`. Cuidador: `Economy/Save/EconomySave.cs` | Cada originador arma y restaura su propia foto. Los campos de la foto son `internal`, así que nadie de afuera la lee. `EconomySave` las guarda como JSON en PlayerPrefs en cuanto algo cambia, sin mirar qué tienen adentro. |
-| **Facade** | `Platform/MobilePlatform.cs` | Un único servicio para todo lo del teléfono: logs del plugin, vibración y Google Play Games. El resto del juego solo llama `Vibrate`, `UnlockAchievement`, `ReportTotalScore`, `ReadLogs`… |
-| **Adapter** | `Platform/Logs/AndroidNativeLogger.cs` (y `ManagedLogger.cs` en el Editor), `Platform/Haptics/AndroidHaptics.cs` (y `SilentHaptics.cs`), `Platform/PlayGames/PlayGamesAccount.cs` | Adaptan las clases Java del plugin (`AndroidJavaObject`) y la API de Play Games a interfaces C# chicas (`INativeLogger`, `IHaptics`). |
+| **Facade** | `Platform/MobilePlatform.cs` | Un único servicio para todo lo del teléfono: logs del plugin, vibración y Google Play Games. El resto del juego solo llama `Vibrate`, `UnlockAchievement`, `ReportTotalScore`, `GetLogs`… |
+| **Adapter** | `Platform/Logs/AndroidNativeLogger.cs`, `Platform/Haptics/AndroidHaptics.cs` (y `SilentHaptics.cs`), `Platform/PlayGames/PlayGamesAccount.cs` | Adaptan las clases Java del plugin (`AndroidJavaObject`) y la API de Play Games a métodos C# (`SendLog`, `GetLogs`, `ClearLogs`) e interfaces chicas (`IHaptics`). |
 | **Template Method** | `Gameplay/Enemies/Enemy.cs` (`TakeHit`), `StaticEnemy.cs` | La secuencia de recibir un impacto (vida, sonido, baja, monedas, vibración) es fija. Cada enemigo redefine `OnHit` y `OnDeath`. |
 
 También se usan, pero **no cuentan** porque ya estaban en el TP1: Service Provider (`Bootstrap/Bootstrapper.cs`, ToolBox), Observer (`EventBus`) y Object Pool (`Gameplay/Bullets/BulletSpawner.cs` y la lista de la tienda).
@@ -61,7 +61,7 @@ También se usan, pero **no cuentan** porque ya estaban en el TP1: Service Provi
 
 `Plugin/KuznickiLogger` es una librería de Android en Java:
 
-- `KuznickiLoggerManager` guarda los logs de Unity en un archivo de la sesión, los devuelve para la pantalla LOGS y los borra después de confirmarlo en un `AlertDialog` nativo.
+- `KuznickiLoggerManager` guarda los logs de Unity en un archivo de la sesión (`sendLog`), los devuelve para la pantalla LOGS (`getLogs`) y los borra después de confirmarlo en un `AlertDialog` nativo (`clearLogs`).
 - `KuznickiVibrator` controla la vibración del teléfono.
 
 El AAR compilado está en `TP2/Assets/Plugins/Android/`. Para recompilarlo:
