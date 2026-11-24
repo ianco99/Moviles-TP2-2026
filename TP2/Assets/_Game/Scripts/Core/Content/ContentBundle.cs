@@ -77,7 +77,8 @@ namespace GunJump.Core
                 pendingLoad = AssetBundle.LoadFromFileAsync(BundlePath);
 
             AssetBundleCreateRequest request = pendingLoad;
-            yield return request;
+            while (!request.isDone)
+                yield return null;
 
             if (pendingLoad != request)
             {
