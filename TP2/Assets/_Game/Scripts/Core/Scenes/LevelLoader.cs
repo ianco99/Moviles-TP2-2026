@@ -1,4 +1,5 @@
 using System.Collections;
+using System.IO;
 using ianco99.ToolBox.Events;
 using ianco99.ToolBox.Services;
 using UnityEngine;
@@ -19,6 +20,7 @@ namespace GunJump.Core
         readonly MonoBehaviour runner;
         int holds;
         MenuScreen requestedMenuScreen;
+        float loadStartTime;
 
         bool isLoading;
         public bool IsLoading => isLoading;
@@ -38,6 +40,8 @@ namespace GunJump.Core
                 return;
 
             isLoading = true;
+            loadStartTime = Time.realtimeSinceStartup;
+            Debug.Log($"LevelLoader: loading {SceneNameOf(buildIndex)}.");
             runner.StartCoroutine(LoadRoutine(buildIndex));
         }
 
@@ -63,6 +67,8 @@ namespace GunJump.Core
                 return;
 
             isLoading = true;
+            loadStartTime = Time.realtimeSinceStartup;
+            Debug.Log($"LevelLoader: restarting {SceneManager.GetActiveScene().name}.");
             runner.StartCoroutine(LoadInPlaceRoutine(SceneManager.GetActiveScene().buildIndex));
         }
 
@@ -162,7 +168,13 @@ namespace GunJump.Core
         {
             Time.timeScale = 1f;
             isLoading = false;
+            Debug.Log($"LevelLoader: {SceneManager.GetActiveScene().name} ready after {Time.realtimeSinceStartup - loadStartTime:F2} s.");
             eventBus.Raise<LevelLoadFinishedEvent>();
+        }
+
+        static string SceneNameOf(int buildIndex)
+        {
+            return Path.GetFileNameWithoutExtension(SceneUtility.GetScenePathByBuildIndex(buildIndex));
         }
 
         static ComponentType FindInScene<ComponentType>(Scene scene) where ComponentType : class

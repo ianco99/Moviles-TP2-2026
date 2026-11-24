@@ -47,10 +47,12 @@ namespace _Game.Scripts.Economy
 
             if (savedWallet == null)
             {
+                Debug.Log("EconomySave: no saved wallet, starting with 0 coins.");
                 return false;
             }
 
             wallet.Restore(savedWallet);
+            Debug.Log($"EconomySave: save loaded with {wallet.PlayerMoney} coins and {levelProgress.TotalStars} stars.");
             return true;
         }
 
@@ -73,6 +75,7 @@ namespace _Game.Scripts.Economy
         {
             PlayerPrefs.SetString(key, JsonUtility.ToJson(snapshot));
             PlayerPrefs.Save();
+            Debug.Log($"EconomySave: {key} written to PlayerPrefs.");
         }
 
         private static SnapshotType Read<SnapshotType>(string key) where SnapshotType : class

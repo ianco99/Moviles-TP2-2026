@@ -31,6 +31,7 @@ namespace GunJump.Gameplay
 
             hitOnce = true;
             session.RegisterMultiplier(multiplier);
+            Debug.Log($"MultiplierTarget: x{multiplier} hit.");
             GameAudio.Play(SoundId.MultiplierHit);
             MobilePlatform.Vibrate(HapticPulse.Multiplier);
             visual.SetActive(false);

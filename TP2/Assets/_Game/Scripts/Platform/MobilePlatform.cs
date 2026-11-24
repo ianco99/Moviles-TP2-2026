@@ -77,18 +77,25 @@ namespace GunJump.Platform
             isVibrationEnabled = enabled;
             PlayerPrefs.SetInt(VIBRATION_KEY, enabled ? 1 : 0);
             PlayerPrefs.Save();
+            Debug.Log($"MobilePlatform: vibration {(enabled ? "on" : "off")}.");
         }
 
         public void UnlockAchievement(Achievement achievement)
         {
-            if (playGames != null && achievementIDs.TryGetValue(achievement, out string achievementID))
-                playGames.Unlock(achievementID);
+            if (playGames == null || !achievementIDs.TryGetValue(achievement, out string achievementID))
+                return;
+
+            Debug.Log($"MobilePlatform: unlocking achievement {achievement}.");
+            playGames.Unlock(achievementID);
         }
 
         public void ReportTotalScore(long score)
         {
-            if (playGames != null)
-                playGames.ReportScore(score, GPGSIds.leaderboard_total_score);
+            if (playGames == null)
+                return;
+
+            Debug.Log($"MobilePlatform: reporting total score {score}.");
+            playGames.ReportScore(score, GPGSIds.leaderboard_total_score);
         }
 
         public void ShowAchievements()

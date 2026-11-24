@@ -14,8 +14,11 @@ namespace GunJump.Gameplay
 
         void OnTriggerEnter(Collider other)
         {
-            if (session != null && other.GetComponentInParent<Gun>() != null)
-                session.Lose();
+            if (session == null || !session.IsPlaying || other.GetComponentInParent<Gun>() == null)
+                return;
+
+            Debug.Log($"HazardZone: the gun touched {name}.");
+            session.Lose();
         }
     }
 }

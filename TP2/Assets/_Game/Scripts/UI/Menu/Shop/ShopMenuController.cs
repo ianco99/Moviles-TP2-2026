@@ -139,6 +139,7 @@ namespace _Game.Scripts.Shop
                 }
 
                 Inventory.Add(item);
+                Debug.Log($"ShopMenuController: bought {item.Id} for {item.Price} coins, {Wallet.PlayerMoney} left.");
                 EventBus.Raise<ShowMoneyCountEvent>();
                 bought = true;
                 CheckArsenal();
@@ -146,6 +147,7 @@ namespace _Game.Scripts.Shop
 
             GameAudio.Play(bought ? SoundId.ShopBuy : SoundId.ShopEquip);
             Equipment.Equip(item);
+            Debug.Log($"ShopMenuController: equipped {item.Id} in {item.Category}.");
             RefreshStates();
             EventBus.Raise<EquippedItemChangedEvent>();
         }

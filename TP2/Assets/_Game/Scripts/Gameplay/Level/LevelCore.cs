@@ -85,6 +85,9 @@ namespace GunJump.Gameplay
             resultView.Hide();
             StartTutorial();
             RefreshHud();
+
+            Debug.Log($"LevelCore: {levelID} started with {session.TotalEnemies} enemies and " +
+                      $"{(session.HasInfiniteAmmo ? "infinite" : session.Ammo.ToString())} ammo.");
         }
 
         void StartTutorial()
@@ -128,8 +131,10 @@ namespace GunJump.Gameplay
 
             session.Tick(Time.deltaTime);
 
-            if (gunTransform.position.y < settings.FallLimitY || RanOutOfAmmo())
-                session.Lose();
+            if (gunTransform.position.y < settings.FallLimitY)
+                Lose("the gun fell off the level");
+            else if (RanOutOfAmmo())
+                Lose("the gun ran out of ammo");
 
             RefreshHud();
 
@@ -159,6 +164,16 @@ namespace GunJump.Gameplay
             isPaused = paused;
             Time.timeScale = paused ? 0f : PlayingTimeScale;
             pauseView.Show(paused);
+            Debug.Log(paused ? $"LevelCore: {levelID} paused." : $"LevelCore: {levelID} resumed.");
+        }
+
+        void Lose(string reason)
+        {
+            if (!session.IsPlaying)
+                return;
+
+            Debug.Log($"LevelCore: {reason}.");
+            session.Lose();
         }
 
         void UpdateSlowStart()
@@ -265,7 +280,15 @@ namespace GunJump.Gameplay
                 bool isFirstClear = LevelProgress.Record(levelID, stars, score);
                 reward = LevelRewards.Coins(session.Coins, session.Multiplier, isFirstClear ? economy.FirstClearBonus : 0);
                 Wallet.AddMoney(reward);
+                Debug.Log($"LevelCore: {levelID} won in {session.Elapsed:F1} s with {stars} stars, score {score}, " +
+                          $"x{session.Multiplier} and {reward} coins earned{(isFirstClear ? ", first clear" : string.Empty)}. " +
+                          $"{session.Kills}/{session.TotalEnemies} enemies, {session.ShotsFired} shots.");
                 ReportWin();
+            }
+            else
+            {
+                Debug.Log($"LevelCore: {levelID} lost after {session.Elapsed:F1} s. " +
+                          $"{session.Kills}/{session.TotalEnemies} enemies, {session.ShotsFired} shots.");
             }
 
             resultView.Show(new ResultData(won, stars, reward, session.Multiplier, score, won && HasNextLevel));

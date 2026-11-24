@@ -32,6 +32,7 @@ namespace _Game.Scripts.Bootstrap
             if (!services.ContainsService<MobilePlatform>())
             {
                 MobilePlatform mobilePlatform = new MobilePlatform();
+                Debug.Log($"Bootstrapper: GunJump {Application.version} started on {SystemInfo.deviceModel} ({SystemInfo.operatingSystem}).");
                 services.AddService<MobilePlatform>(mobilePlatform);
                 mobilePlatform.Init(hapticsTuning);
             }

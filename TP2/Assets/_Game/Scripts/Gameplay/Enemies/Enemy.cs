@@ -49,6 +49,7 @@ namespace GunJump.Gameplay
             GameAudio.Play(SoundId.EnemyDeath);
             MobilePlatform.Vibrate(HapticPulse.Kill);
             session?.RegisterKill(config.CoinReward);
+            Debug.Log($"Enemy: {name} killed, +{config.CoinReward} coins.");
             OnDeath(hit);
         }
 

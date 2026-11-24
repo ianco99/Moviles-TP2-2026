@@ -165,6 +165,8 @@ namespace GunJump.Gameplay
             if (equippedStrategy != null)
                 SetStrategy(equippedStrategy);
 
+            Debug.Log($"Gun: {loadout}, fires with {strategy}.");
+
             LevelLoader loader = services.GetService<LevelLoader>();
             loader.Hold();
             ApplyLoadout(loadout, services.GetService<ContentLibrary>(), loader.Release);

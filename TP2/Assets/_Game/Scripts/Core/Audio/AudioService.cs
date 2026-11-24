@@ -69,6 +69,8 @@ namespace GunJump.Core
 
         public void SetEnabled(AudioChannel channel, bool enabled)
         {
+            Debug.Log($"AudioService: {channel} {(enabled ? "on" : "off")}.");
+
             if (channel == AudioChannel.Music)
             {
                 musicEnabled = enabled;

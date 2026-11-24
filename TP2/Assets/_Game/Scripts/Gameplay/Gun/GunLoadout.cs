@@ -26,5 +26,15 @@ namespace GunJump.Gameplay
                 equipment.GetEquipped(ShopCategory.Bullets),
                 equipment.GetEquipped(ShopCategory.ShotVFX));
         }
+
+        public override string ToString()
+        {
+            return $"gun {IDOf(Gun)}, skin {IDOf(Skin)}, bullet {IDOf(Bullet)}, shot VFX {IDOf(ShotVfx)}";
+        }
+
+        private static string IDOf(ShopItem item)
+        {
+            return item != null ? item.Id : "none";
+        }
     }
 }

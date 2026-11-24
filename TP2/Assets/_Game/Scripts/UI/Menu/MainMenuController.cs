@@ -104,6 +104,7 @@ namespace GunJump.UI
         private void QuitConfirmed()
         {
             GameAudio.Play(SoundId.ButtonClick);
+            Debug.Log("MainMenuController: quitting the game.");
             Application.Quit();
         }
 

@@ -92,6 +92,10 @@ namespace GunJump.Core
                 Debug.LogError($"No se pudo cargar el AssetBundle '{Name}' en '{BundlePath}'. " +
                                "En el Editor, corré GunJump > Asset Bundles > Build Gun Bundles (Editor).");
             }
+            else
+            {
+                Debug.Log($"ContentBundle: '{Name}' loaded.");
+            }
         }
 
         public void UnloadKeepingLoadedAssets()
