@@ -12,6 +12,7 @@ namespace GunJump.EditorTools
     public sealed class GunBundleBuilder : BuildPlayerProcessor
     {
         internal const string SHOT_VFX_FOLDER = "Assets/_Game/Prefabs/ShotsVFX";
+        internal const string BULLETS_FOLDER = "Assets/_Game/Prefabs/Bullets";
 
         private static string s_preparedOutput;
 
@@ -24,7 +25,7 @@ namespace GunJump.EditorTools
         {
             new BundleSource(ShopCategory.Guns, "Assets/_Game/Art/Models", "t:Model", required: true),
             new BundleSource(ShopCategory.GunSkins, "Assets/_Game/Art/Materials/Skins", "t:Material", required: false),
-            new BundleSource(ShopCategory.Bullets, "Assets/_Game/Prefabs/Loadout/Bullets", "t:Prefab", required: false),
+            new BundleSource(ShopCategory.Bullets, BULLETS_FOLDER, "t:Prefab", required: false),
             new BundleSource(ShopCategory.ShotVFX, SHOT_VFX_FOLDER, "t:Prefab", required: false),
             new BundleSource(ContentLibrary.PREFABS_BUNDLE, "Assets/_Game/Prefabs/Runtime", "t:Prefab", required: true),
         };

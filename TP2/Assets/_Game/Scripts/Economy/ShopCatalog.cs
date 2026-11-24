@@ -18,6 +18,9 @@ namespace _Game.Scripts.Shop
         [Tooltip("Skin equipada cuando el jugador todavía no eligió ninguna. Vacío = el arma con sus propios materiales.")]
         [SerializeField] private ShopItem defaultSkin;
 
+        [Tooltip("Bala equipada cuando el jugador todavía no eligió ninguna. Vacío = la bala que trae el prefab Bullet.")]
+        [SerializeField] private ShopItem defaultBullet;
+
         public ShopItem GetDefault(ShopCategory category)
         {
             switch (category)
@@ -26,6 +29,8 @@ namespace _Game.Scripts.Shop
                     return defaultGun;
                 case ShopCategory.GunSkins:
                     return defaultSkin;
+                case ShopCategory.Bullets:
+                    return defaultBullet;
                 default:
                     return null;
             }

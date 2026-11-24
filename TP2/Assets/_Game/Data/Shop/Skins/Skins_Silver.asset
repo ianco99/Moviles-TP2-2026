@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3009408c85248b8ae8506e73468e831c, type: 3}
   m_Name: Skins_Silver
   m_EditorClassIdentifier: GunJump.UI::_Game.Scripts.Shop.ShopItem
-  sprite: {fileID: 21300000, guid: 4cf7c94f9c0c5631d8c8a56e1e9200b8, type: 3}
+  sprite: {fileID: 21300000, guid: 959ecc99504d13d4eadb840eb334ad69, type: 3}
   category: 1
   price: 150
   assetName: Skins_Silver

@@ -32,7 +32,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 0562bdf2c11774007a0a41431985f239, type: 2}
   - {fileID: 11400000, guid: a5be1ceaf5cb2d3d580cfb3d2a629ae0, type: 2}
   - {fileID: 11400000, guid: 82ede74f74fc2bd1081248aeddd25597, type: 2}
-  bullets: []
+  bullets:
+  - {fileID: 11400000, guid: 5795a35c064825549927cc572222ec08, type: 2}
+  - {fileID: 11400000, guid: 8df17c6ab62454e449c734c70e6d0c7a, type: 2}
+  - {fileID: 11400000, guid: 45e9de7ce6f455131909b15760146264, type: 2}
+  - {fileID: 11400000, guid: 04675c32a2cf9eb48ad060f36aa263e7, type: 2}
+  - {fileID: 11400000, guid: 52ee0419d363ce64f82e23dac9eb76b9, type: 2}
+  - {fileID: 11400000, guid: 783d060b7bd51784fbad5fa3fedafa7e, type: 2}
+  - {fileID: 11400000, guid: 355ceacf4c89aed458f727b47c22f003, type: 2}
+  - {fileID: 11400000, guid: daf3c4301c8942544875d71750018fc6, type: 2}
+  - {fileID: 11400000, guid: b5e57aad897e4934f9476990fa3c59bc, type: 2}
+  - {fileID: 11400000, guid: e56c46fd57a770546976665f38bb618d, type: 2}
+  - {fileID: 11400000, guid: 1816bff6a612c934ab5edeec77ebdf2e, type: 2}
   shotVfx:
   - {fileID: 11400000, guid: e711424c2714727488b4a4ca957d6166, type: 2}
   - {fileID: 11400000, guid: 383fe69d8c3f00d4996e9f18172adb16, type: 2}
