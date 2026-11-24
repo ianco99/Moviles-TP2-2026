@@ -95,7 +95,7 @@ namespace GunJump.EditorTools
         static readonly string[] SPREAD_GUN_IDS = { "Guns_Shotgun" };
         static readonly string[] BURST_GUN_IDS = { "Guns_BurstPistol", "Guns_MachineGun" };
         static readonly string[] HEAVY_GUN_IDS = { "Guns_Sniper", "Guns_SingleCannon", "Guns_GrenadeLauncher" };
-        static readonly string[] LEVEL_SCENE_PATHS = { LEVEL1_SCENE_PATH, LEVEL2_SCENE_PATH, LEVEL3_SCENE_PATH, LEVEL4_SCENE_PATH, LEVEL5_SCENE_PATH };
+        internal static readonly string[] LEVEL_SCENE_PATHS = { LEVEL1_SCENE_PATH, LEVEL2_SCENE_PATH, LEVEL3_SCENE_PATH, LEVEL4_SCENE_PATH, LEVEL5_SCENE_PATH };
         static readonly string[] TEMPLATE_LEVEL_PATHS = { LEVEL2_SCENE_PATH, LEVEL3_SCENE_PATH, LEVEL4_SCENE_PATH, LEVEL5_SCENE_PATH };
         static readonly int[] TEMPLATE_AMMO = { 40, 30, 30, 25 };
         static readonly float[] TEMPLATE_TARGET_TIMES = { 40f, 45f, 45f, 50f };
@@ -1359,7 +1359,7 @@ namespace GunJump.EditorTools
             return -1;
         }
 
-        static GameObject FindRoot(Scene scene, string name)
+        internal static GameObject FindRoot(Scene scene, string name)
         {
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -1434,7 +1434,7 @@ namespace GunJump.EditorTools
             return Path.GetDirectoryName(assetPath).Replace('\\', '/');
         }
 
-        static void EnsureFolder(string folder)
+        internal static void EnsureFolder(string folder)
         {
             if (AssetDatabase.IsValidFolder(folder))
                 return;
